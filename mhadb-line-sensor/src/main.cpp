@@ -3,6 +3,8 @@
 
 #include "STM32_CAN.h"
 
+#include "can_messages.h"
+
 
 #define RGB1 PB12
 #define RGB2 PB13
@@ -24,11 +26,6 @@
 STM32_CAN Can(CAN1, DEF) ;
 static CAN_message_t CAN_TX_msg;
 static CAN_message_t CAN_RX_msg;
-
-struct __attribute__ ((packed)) t_line   {
-  uint8_t id;
-  uint16_t  value;
-};
 
 int sensors[] = {LS1, LS2, LS3, LS4, LS5, LS6, LS7, LS8, LS9 };
 
@@ -100,7 +97,7 @@ void update_can(uint16_t* values) {
 
   for (size_t i = 0; i < 10; i++) {
     // Struct
-    t_line msg_content = {(uint8_t) i, values[i]};
+    t_line_sensor_data msg_content = {(uint8_t) i, values[i]};
     CAN_TX_msg.len = sizeof(msg_content);
     memcpy(CAN_TX_msg.buf, &msg_content, sizeof(msg_content));
 
@@ -117,7 +114,7 @@ void update_can(uint16_t* values) {
     // CAN_TX_msg.buf[6] =  0;
     // CAN_TX_msg.buf[7] =  0;
   }
-  t_line msg_content;
+  t_line_sensor_data msg_content;
   memcpy(&msg_content, CAN_TX_msg.buf, sizeof(msg_content));
   //uint32_t var3 = (CAN_TX_msg.buf[1] << 16) +  CAN_TX_msg.buf[2];
   Serial.println(msg_content.value);
