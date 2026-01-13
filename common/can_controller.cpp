@@ -21,6 +21,8 @@ void CanController::send_can(uint32_t id, uint8_t *data, uint8_t data_len) {
 void CanController::handle_can() {
     t_line_sensor_data data = {  };
     handle_struct(data);
+    t_line_sensor_raw_data data2 = {  };
+    handle_struct(data2);
 }
 
 void CanController::send_struct(t_line_sensor_raw_data data) {

@@ -28,8 +28,8 @@ public:
   void send_struct(t_line_sensor_raw_data data);
   void send_struct(t_line_sensor_data data);
 
-  void handle_struct(t_line_sensor_raw_data data) = 0;
-  void handle_struct(t_line_sensor_data data) = 0;
+  virtual void handle_struct(t_line_sensor_raw_data data) {};
+  virtual void handle_struct(t_line_sensor_data data) {};
 
 private:
   STM32_CAN m_stm32CAN;

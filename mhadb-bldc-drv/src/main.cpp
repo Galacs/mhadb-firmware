@@ -17,12 +17,13 @@
 class BldcCanController: public CanController
 {
 public:
-  void handle_struct(t_line_sensor_raw_data data) override {
+  void handle_struct(t_line_sensor_raw_data data) {
     Serial.println("sdfsdsdf");
   }
 
 };
 
+BldcCanController can;
 
 HardwareSerial Serial3(PB11, PB10);
 
@@ -109,6 +110,8 @@ void setup() {
 
 void loop() {
  
+  can.handle_can();
+
   motor.loopFOC();
 
   motor.move();
