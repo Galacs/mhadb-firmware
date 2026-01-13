@@ -3,7 +3,7 @@
 
 #include "STM32_CAN.h"
 
-#include "can_messages.h"
+#include <can_controller.h>
 
 
 #define RGB1 PB12
@@ -23,8 +23,7 @@
 #define LS8 PB0
 #define LS9 PB1
 
-STM32_CAN Can(CAN1, DEF) ;
-static CAN_message_t CAN_TX_msg;
+CanController Can;
 static CAN_message_t CAN_RX_msg;
 
 int sensors[] = {LS1, LS2, LS3, LS4, LS5, LS6, LS7, LS8, LS9 };
@@ -87,28 +86,6 @@ void update_line_sensors(int* sensors, uint16_t*  values) {
   }
 }
 
-void init_can() {
-  Can.begin();
-  Can.setBaudRate(1000000);
-  Can.enableLoopBack();
-}
-
-void update_can(uint16_t* values) {
-  for (size_t i = 0; i < 10; i++) {
-    CAN_TX_msg.id = (CAN_ID::LINE_RAW_SENSOR_DATA);
-    t_line_sensor_raw_data msg_content = {(uint8_t) i, values[i]};
-    CAN_TX_msg.len = sizeof(msg_content);
-    memcpy(CAN_TX_msg.buf, &msg_content, sizeof(msg_content));
-  }
-
-  // Decode example
-  t_line_sensor_raw_data msg_content;
-  memcpy(&msg_content, CAN_TX_msg.buf, sizeof(msg_content));
-  Serial.println(msg_content.value);
-
-  Can.write(CAN_TX_msg);
-}
-
 void print_line_values(uint16_t* values) {
      for (size_t i = 0; i < 10; i++) {
         Serial.print(values[i]);
@@ -117,16 +94,31 @@ void print_line_values(uint16_t* values) {
      Serial.println("");
 }
 
-void read_can() {
-  if (Can.read(CAN_RX_msg)) {
-    Serial.print("received id: ");
-    Serial.println(CAN_RX_msg.id);
+void update_can(uint16_t* values) {
+  for (uint8_t i = 0; i < 10; i++) {
+    t_line_sensor_raw_data msg_content = {i, values[i]};
+    Can.send_struct(msg_content);
   }
+
+  // Decode example
+  // t_line_sensor_raw_data msg_content;
+  // memcpy(&msg_content, CAN_TX_msg.buf, sizeof(msg_content));
+  // Serial.println(msg_content.value);
+
+  // Can.write(CAN_TX_msg);
 }
+
+// void read_can() {
+//   if (Can.read(CAN_RX_msg)) {
+//     Serial.print("received id: ");
+//     Serial.println(CAN_RX_msg.id);
+//   }
+// }
 
 void setup() {
   Serial.begin(115200);
-  init_can();
+
+  Can.init();
 
   // put your setup code here, to run once:
   pinMode(BTN1, INPUT_PULLUP);
@@ -139,7 +131,7 @@ void loop() {
   print_line_values(line_sensors);
   update_can(line_sensors);
   update_leds(line_sensors);
-  read_can();
+  // read_can();
   delay(1000);
   // put your main code here, to run repeatedly:
 }
