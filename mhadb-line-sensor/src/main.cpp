@@ -94,33 +94,19 @@ void init_can() {
 }
 
 void update_can(uint16_t* values) {
-
   for (size_t i = 0; i < 10; i++) {
-    // Struct
-    t_line_sensor_data msg_content = {(uint8_t) i, values[i]};
+    CAN_TX_msg.id = (CAN_ID::LINE_RAW_SENSOR_DATA);
+    t_line_sensor_raw_data msg_content = {(uint8_t) i, values[i]};
     CAN_TX_msg.len = sizeof(msg_content);
     memcpy(CAN_TX_msg.buf, &msg_content, sizeof(msg_content));
-
-
-    // Manual
-    CAN_TX_msg.id = (0x69);
-    // CAN_TX_msg.len = 8;
-    // CAN_TX_msg.buf[0] =  i;
-    // CAN_TX_msg.buf[1] =  ((uint16_t) values[i] >> 16);
-    // CAN_TX_msg.buf[2] =  (uint16_t) values[i];
-    // CAN_TX_msg.buf[3] =  0;
-    // CAN_TX_msg.buf[4] =  0;
-    // CAN_TX_msg.buf[5] =  0;
-    // CAN_TX_msg.buf[6] =  0;
-    // CAN_TX_msg.buf[7] =  0;
   }
-  t_line_sensor_data msg_content;
+
+  // Decode example
+  t_line_sensor_raw_data msg_content;
   memcpy(&msg_content, CAN_TX_msg.buf, sizeof(msg_content));
-  //uint32_t var3 = (CAN_TX_msg.buf[1] << 16) +  CAN_TX_msg.buf[2];
   Serial.println(msg_content.value);
 
   Can.write(CAN_TX_msg);
-
 }
 
 void print_line_values(uint16_t* values) {
