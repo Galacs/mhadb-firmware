@@ -2,10 +2,16 @@
 
 #include "STM32_CAN.h"
 
+// To add a new can messages you have to:
+// - Define the can message id in the CAN_ID enum with the right order based on the ids
+// - Create the packed struct that can't exceed 8 bytes
+// - Add the send_struct function with the right can id and size
+// - Add the handle_struct function definition and default implementation {}
+// - Add the correct case to handle_can()'s switch
 
 enum CAN_ID {
-  LINE_RAW_SENSOR_DATA = 0x50,
   LINE_SENSOR_DATA = 0x40,
+  LINE_RAW_SENSOR_DATA = 0x50,
 };
 
 struct __attribute__ ((packed)) t_line_sensor_raw_data {
