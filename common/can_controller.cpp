@@ -18,6 +18,15 @@ void CanController::send_can(uint32_t id, uint8_t *data, uint8_t data_len) {
     m_stm32CAN.write(m_tx_msg);
 }
 
+void CanController::handle_can() {
+    t_line_sensor_data data = {  };
+    handle_struct(data);
+}
+
 void CanController::send_struct(t_line_sensor_raw_data data) {
     send_can(CAN_ID::LINE_RAW_SENSOR_DATA, (uint8_t*) &data, sizeof(data));
+}
+
+void CanController::send_struct(t_line_sensor_data data) {
+    send_can(CAN_ID::LINE_SENSOR_DATA, (uint8_t*) &data, sizeof(data));
 }

@@ -23,7 +23,9 @@
 #define LS8 PB0
 #define LS9 PB1
 
-CanController Can;
+class LineCanController: public CanController {};
+
+LineCanController Can;
 static CAN_message_t CAN_RX_msg;
 
 int sensors[] = {LS1, LS2, LS3, LS4, LS5, LS6, LS7, LS8, LS9 };

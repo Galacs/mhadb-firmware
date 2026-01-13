@@ -23,9 +23,14 @@ public:
   CanController();
   void init();
   void send_can(uint32_t id, uint8_t* data, uint8_t data_len);
+  void handle_can();
   
   void send_struct(t_line_sensor_raw_data data);
-  
+  void send_struct(t_line_sensor_data data);
+
+  void handle_struct(t_line_sensor_raw_data data) = 0;
+  void handle_struct(t_line_sensor_data data) = 0;
+
 private:
   STM32_CAN m_stm32CAN;
   CAN_message_t m_tx_msg;

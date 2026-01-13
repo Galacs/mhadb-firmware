@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <SimpleFOC.h>
 #include "STM32_CAN.h"
+#include <can_controller.h>
 
 #define INHA PA8
 #define INHB PA9
@@ -13,8 +14,15 @@
 #define SOB PA2
 #define SOC PA3
 
-STM32_CAN Can(CAN1, DEF) ;
-static CAN_message_t CAN_RX_msg;
+class BldcCanController: public CanController
+{
+public:
+  void handle_struct(t_line_sensor_raw_data data) override {
+    Serial.println("sdfsdsdf");
+  }
+
+};
+
 
 HardwareSerial Serial3(PB11, PB10);
 
@@ -26,11 +34,6 @@ MagneticSensorI2C sensor = MagneticSensorI2C(AS5600_I2C);
 Commander command = Commander(Serial3);
 void doMotor(char* cmd) { command.motor(&motor, cmd); }
 
-void init_can() {
-  Can.begin();
-  Can.setBaudRate(1000000);
-}
-
 struct __attribute__ ((packed)) t_motor_command   {
   uint8_t id;
   uint16_t value;
@@ -39,8 +42,6 @@ struct __attribute__ ((packed)) t_motor_command   {
 void setup() {
   Serial3.begin(115200);
   Wire.setClock(400000);
-
-  init_can();
 
   // SimpleFOC setup
   SimpleFOCDebug::enable(&Serial3);
@@ -96,15 +97,15 @@ void setup() {
 
 }
 
-void read_can() {
-  if (Can.read(CAN_RX_msg)) {
-    Serial3.print("received id: ");
-    Serial3.println(CAN_RX_msg.id);
-    t_motor_command msg_content;
-    memcpy(&msg_content, CAN_RX_msg.buf, sizeof(msg_content));
-    Serial3.printf("On motor: %d, the value: %d", msg_content.id, msg_content.value);
-  }
-}
+// void read_can() {
+//   if (Can.read(CAN_RX_msg)) {
+//     Serial3.print("received id: ");
+//     Serial3.println(CAN_RX_msg.id);
+//     t_motor_command msg_content;
+//     memcpy(&msg_content, CAN_RX_msg.buf, sizeof(msg_content));
+//     Serial3.printf("On motor: %d, the value: %d", msg_content.id, msg_content.value);
+//   }
+// }
 
 void loop() {
  
@@ -115,7 +116,7 @@ void loop() {
   command.run();
   motor.monitor();
 
-  read_can();
+  // read_can();
   delay(100);
 
 }
