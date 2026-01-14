@@ -96,11 +96,23 @@ void print_line_values(uint16_t* values) {
      Serial.println("");
 }
 
+int16_t get_line_position(uint16_t* values) {
+  // TODO: Moyenne réduite
+  const uint8_t weights[] = {4, 14, 24, 34, 44};
+  uint32_t total_moy = 0;
+  for (uint8_t i = 0; i < 10; i++) {
+    total_moy += weights[i % 5] * values[i] * -(i < 5);
+  }
+  return total_moy/(120);
+}
+
 void update_can(uint16_t* values) {
   for (uint8_t i = 0; i < 10; i++) {
     t_line_sensor_raw_data msg_content = {i, values[i]};
     Can.send_struct(msg_content);
   }
+  t_line_sensor_data msg_content { .line_pos=get_line_position(values) };
+  Can.send_struct(msg_content);
 
   // Decode example
   // t_line_sensor_raw_data msg_content;
