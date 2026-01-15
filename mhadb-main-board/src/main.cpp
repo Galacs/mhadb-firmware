@@ -1,18 +1,26 @@
 #include <Arduino.h>
+#include "can_controller.h"
 
-// put function declarations here:
-int myFunction(int, int);
+class MainCanController: public CanController
+{
+public:
+  void handle_struct(t_line_sensor_raw_data data) {
+    Serial.println("sdfsdsdf received");
+  }
+
+};
+
+MainCanController can;
 
 void setup() {
-  // put your setup code here, to run once:
-  int result = myFunction(2, 3);
+  Serial.begin(115200);
+  can.init((gpio_num_t)12, (gpio_num_t)14);
+
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-}
-
-// put function definitions here:
-int myFunction(int x, int y) {
-  return x + y;
+  t_line_sensor_raw_data a {.id=10, .value=126};
+  can.send_struct(a);
+  delay(1000);
+  Serial.println("alive");
 }

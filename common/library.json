@@ -2,7 +2,12 @@
   "name": "MHADB Common",
   "version": "1.0.0",
   "description": "MHABD firmware common functions",
-  "dependencies": {
-    "pazi88/STM32_CAN": "^1.2.2"
-  }
+  "dependencies": [
+        {
+        "owner": "pazi88",
+        "name": "STM32_CAN",
+        "version": "^1.2.2",
+        "platforms": ["ststm32"]
+    }
+  ]
 }
