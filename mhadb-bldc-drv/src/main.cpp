@@ -14,6 +14,8 @@
 #define SOB PA2
 #define SOC PA3
 
+#define Serial3 Serial
+
 class BldcCanController: public CanController
 {
 public:
@@ -25,10 +27,10 @@ public:
 
 BldcCanController can;
 
-HardwareSerial Serial3(PB11, PB10);
+//HardwareSerial Serial3(PB11, PB10);
 
 BLDCMotor motor = BLDCMotor(7);
-BLDCDriver6PWM driver = BLDCDriver6PWM(INHA, INLA, INHB, INLB, INHC, INLC);
+//BLDCDriver6PWM driver = BLDCDriver6PWM(INHA, INLA, INHB, INLB, INHC, INLC);
 
 MagneticSensorI2C sensor = MagneticSensorI2C(AS5600_I2C);
 
@@ -40,14 +42,17 @@ struct __attribute__ ((packed)) t_motor_command   {
   uint16_t value;
 };
 
-#define Serial3 Serial
-
 void setup() {
   Serial3.begin(115200);
+  Serial3.println("salut");
+  Serial3.println("salut");
+  Serial.println("et salut");
+  
+  can.init();
   //Wire.setClock(400000);
 
   // SimpleFOC setup
-  SimpleFOCDebug::enable(&Serial3);
+  //SimpleFOCDebug::enable(&Serial3);
 
   command.verbose = VerboseMode::machine_readable;
 
@@ -116,7 +121,7 @@ void loop() {
 
   can.send_struct(a);
  
-  can.handle_can();
+  //can.handle_can();
 
   /*motor.loopFOC();
 
