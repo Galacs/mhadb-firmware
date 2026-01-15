@@ -7,30 +7,17 @@ CanController::CanController(): m_stm32CAN(STM32_CAN(CAN1, DEF)), m_tx_msg {}, m
 void CanController::init()
 {
     m_stm32CAN = STM32_CAN(CAN1, DEF);
-    Serial.println("1");
-    delay(1000);
-    m_stm32CAN.begin();
-    Serial.println("2");
-    delay(1000);
-    m_stm32CAN.enableLoopBack();
-    Serial.println("3");
-    delay(1000);
+    m_stm32CAN.begin(false);
     m_stm32CAN.setBaudRate(1000000);
-    Serial.println("4");
-    delay(3000);
-    Serial.println("tjrs pas crashahahah");
+    //m_stm32CAN.enableLoopBack();
 }
 
 void CanController::send_can(uint32_t id, uint8_t *data, uint8_t data_len) {
     m_tx_msg.id = CAN_ID::LINE_RAW_SENSOR_DATA;
     m_tx_msg.len = data_len;
     Serial.printf("data len: %d\n", data_len);
-    delay(1000);
     memcpy(&m_tx_msg.buf, data, data_len);
-    Serial.println("done memcpy");
-    delay(1000);
     if (m_stm32CAN.write(m_tx_msg)) {
-        delay(1000);
         Serial.println("can sent");
     };
 }

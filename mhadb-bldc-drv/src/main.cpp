@@ -30,7 +30,7 @@ BldcCanController can;
 //HardwareSerial Serial3(PB11, PB10);
 
 BLDCMotor motor = BLDCMotor(7);
-//BLDCDriver6PWM driver = BLDCDriver6PWM(INHA, INLA, INHB, INLB, INHC, INLC);
+BLDCDriver6PWM driver = BLDCDriver6PWM(INHA, INLA, INHB, INLB, INHC, INLC);
 
 MagneticSensorI2C sensor = MagneticSensorI2C(AS5600_I2C);
 
@@ -44,19 +44,16 @@ struct __attribute__ ((packed)) t_motor_command   {
 
 void setup() {
   Serial3.begin(115200);
-  Serial3.println("salut");
-  Serial3.println("salut");
-  Serial.println("et salut");
   
   can.init();
   //Wire.setClock(400000);
 
   // SimpleFOC setup
-  //SimpleFOCDebug::enable(&Serial3);
+  SimpleFOCDebug::enable(&Serial3);
 
   command.verbose = VerboseMode::machine_readable;
 
-  /*sensor.init();
+  //sensor.init();
 
 
   driver.voltage_power_supply = 12;
@@ -64,7 +61,7 @@ void setup() {
   driver.init();
 
   motor.linkDriver(&driver);
-  motor.linkSensor(&sensor);
+  //motor.linkSensor(&sensor);
 
   // set motion control loop to be used
   motor.controller = MotionControlType::velocity_openloop;
@@ -102,18 +99,8 @@ void setup() {
   Serial3.println("Target velocity: 1 rad/s");
   Serial3.println("Voltage limit 2V");
   _delay(1000);
-*/
 }
 
-// void read_can() {
-//   if (Can.read(CAN_RX_msg)) {
-//     Serial3.print("received id: ");
-//     Serial3.println(CAN_RX_msg.id);
-//     t_motor_command msg_content;
-//     memcpy(&msg_content, CAN_RX_msg.buf, sizeof(msg_content));
-//     Serial3.printf("On motor: %d, the value: %d", msg_content.id, msg_content.value);
-//   }
-// }
 int i = 0;
 void loop() {
 
@@ -121,14 +108,14 @@ void loop() {
 
   can.send_struct(a);
  
-  //can.handle_can();
+  can.handle_can();
 
-  /*motor.loopFOC();
+  motor.loopFOC();
 
   motor.move();
 
   command.run();
-  motor.monitor();*/
+  motor.monitor();
 
   // read_can();
   delay(200);
@@ -136,4 +123,3 @@ void loop() {
   i++;
 
 }
-
