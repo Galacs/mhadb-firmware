@@ -1,6 +1,11 @@
 #pragma once
 
+#include <Arduino.h>
+
+#ifdef ARDUINO_ARCH_STM32
 #include "STM32_CAN.h"
+#endif
+
 
 // To add a new can messages you have to:
 // - Define the can message id in the CAN_ID enum with the right order based on the ids
@@ -45,7 +50,9 @@ public:
   virtual void handle_struct(t_line_sensor_data data) {};
 
 private:
+#ifdef ARDUINO_ARCH_STM32
   STM32_CAN m_stm32CAN;
   CAN_message_t m_tx_msg;
   CAN_message_t m_rx_msg;
+#endif
 };

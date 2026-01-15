@@ -18,7 +18,7 @@ class BldcCanController: public CanController
 {
 public:
   void handle_struct(t_line_sensor_raw_data data) {
-    Serial.println("sdfsdsdf");
+    Serial.println("sdfsdsdf received");
   }
 
 };
@@ -40,16 +40,18 @@ struct __attribute__ ((packed)) t_motor_command   {
   uint16_t value;
 };
 
+#define Serial3 Serial
+
 void setup() {
   Serial3.begin(115200);
-  Wire.setClock(400000);
+  //Wire.setClock(400000);
 
   // SimpleFOC setup
   SimpleFOCDebug::enable(&Serial3);
 
   command.verbose = VerboseMode::machine_readable;
 
-  sensor.init();
+  /*sensor.init();
 
 
   driver.voltage_power_supply = 12;
@@ -95,7 +97,7 @@ void setup() {
   Serial3.println("Target velocity: 1 rad/s");
   Serial3.println("Voltage limit 2V");
   _delay(1000);
-
+*/
 }
 
 // void read_can() {
@@ -107,20 +109,26 @@ void setup() {
 //     Serial3.printf("On motor: %d, the value: %d", msg_content.id, msg_content.value);
 //   }
 // }
-
+int i = 0;
 void loop() {
+
+  t_line_sensor_raw_data a {.id=10, .value=126};
+
+  can.send_struct(a);
  
   can.handle_can();
 
-  motor.loopFOC();
+  /*motor.loopFOC();
 
   motor.move();
 
   command.run();
-  motor.monitor();
+  motor.monitor();*/
 
   // read_can();
-  delay(100);
+  delay(200);
+  Serial.printf("running..., %d\n", i);
+  i++;
 
 }
 
