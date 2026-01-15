@@ -5,6 +5,9 @@
 #ifdef ARDUINO_ARCH_STM32
 #include "STM32_CAN.h"
 #endif
+#ifdef ARDUINO_ARCH_ESP32
+#include "driver/twai.h"
+#endif
 
 
 // To add a new can messages you have to:
@@ -37,9 +40,15 @@ struct t_can_frame {
 class CanController {
 public:
   CanController();
+#ifdef ARDUINO_ARCH_STM32
   void init();
+#endif
+#ifdef ARDUINO_ARCH_ESP32
+  void init(gpio_num_t rx, gpio_num_t tx);
+#endif
+
   void send_can(uint32_t id, uint8_t* data, uint8_t data_len);
-  void receive_can(t_can_frame* frame);
+  bool receive_can(t_can_frame* frame);
 
   void handle_can();
   
