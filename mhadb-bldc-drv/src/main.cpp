@@ -113,7 +113,19 @@ void setup() {
   motor.target = 5; //initial target velocity 1 rad/s
   Serial3.println("Target velocity: 1 rad/s");
   Serial3.println("Voltage limit 2V");
-  _delay(1000);
+
+  // Real time FOC
+  HardwareTimer* timer = new HardwareTimer(TIM2);
+  // Set timer frequency to 10kHz
+  timer->setOverflow(10000, HERTZ_FORMAT);
+  // add the loopFOC and move to the timer
+  timer->attachInterrupt([](){
+    // call the loopFOC and move functions
+    motor.loopFOC();
+    motor.move();
+  });
+  // start the timer
+  timer->resume();
 }
 
 int i = 0;
@@ -124,10 +136,6 @@ void loop() {
   //can.send_struct(a);
  
   //can.handle_can();
-
-  motor.loopFOC();
-
-  motor.move();
 
   command.run();
   motor.monitor();
