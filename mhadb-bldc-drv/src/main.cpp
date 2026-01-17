@@ -55,7 +55,7 @@ void setup() {
   Serial3.setRx(PB7);
   Serial3.setTx(PB6);
   Serial3.begin(115200);
-  
+
   can.init();
 
   // SimpleFOC setup
@@ -66,19 +66,19 @@ void setup() {
   sensor.init(&Wire2);
 
 
-  driver.voltage_power_supply = 12;
+  driver.voltage_power_supply = 3.6*3;
   driver.init();
 
   motor.linkDriver(&driver);
   motor.linkSensor(&sensor);
 
   // set motion control loop to be used
-  motor.controller = MotionControlType::velocity_openloop;
+  motor.controller = MotionControlType::velocity;
 
-  motor.foc_modulation = FOCModulationType::SpaceVectorPWM;
+  // motor.foc_modulation = FOCModulationType::SpaceVectorPWM;
 
   // default voltage_power_supply
-  motor.voltage_limit = 6; // Volts
+  motor.voltage_limit = 3.6*3; // Volts
 
   driver.pwm_frequency = 30000;
 
@@ -90,14 +90,18 @@ void setup() {
 
   motor.PID_velocity.P = 0.2;
   motor.PID_velocity.I = 20;
-  motor.PID_velocity.D = 0.001;
+  motor.PID_velocity.D = 0.0001;
   motor.PID_velocity.output_ramp = 1000;
+
+  motor.P_angle.P = 15;
 
   motor.LPF_velocity.Tf = 0.01;
 
   // initialize motor
   motor.init();
   // align encoder and start FOC
+  motor.zero_electric_angle  = 4.36; // rad
+  motor.sensor_direction = Direction::CCW; // CW or CCW
   motor.initFOC();
 
   // add target command M
