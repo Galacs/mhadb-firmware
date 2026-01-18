@@ -58,6 +58,9 @@ public:
   virtual void handle_struct(t_line_sensor_raw_data data) {};
   virtual void handle_struct(t_line_sensor_data data) {};
 
+  virtual void update_struct(t_line_sensor_raw_data* data) {};
+  virtual void update_struct(t_line_sensor_data* data) {};
+
 private:
 #ifdef ARDUINO_ARCH_STM32
   STM32_CAN m_stm32CAN;

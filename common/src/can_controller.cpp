@@ -27,8 +27,9 @@ bool CanController::receive_can(t_can_frame* frame) {
         return false;
     }
 
-    frame->id = this->m_rx_msg.id;
-    frame->len = this->m_rx_msg.len;
+    frame->id = m_rx_msg.id;
+    frame->len = m_rx_msg.len;
+    frame->rtr = m_rx_msg.flags.remote;
     memcpy(frame->buf, &m_rx_msg.buf, m_rx_msg.len);
     return true;
 }
@@ -93,21 +94,30 @@ void CanController::handle_can() {
         // Serial.println("received can in the handler");
     }
     uint32_t can_msg_id = frame.id;
-    // Serial.printf("The can id: %d\n", can_msg_id);
-    switch (can_msg_id) {
-    case CAN_ID::LINE_RAW_SENSOR_DATA: {
-        t_line_sensor_raw_data data;
-        memcpy(&data, frame.buf, sizeof(data));
-        handle_struct(data);
-        break;
-    }
-    case CAN_ID::LINE_SENSOR_DATA: {
-        // Serial.println("itsa lina data");
-        t_line_sensor_data data;
-        memcpy(&data, frame.buf, sizeof(data));
-        handle_struct(data);
-        break;
-    } 
+    // Serial.printf("The can id: %d\n", can_msg_id);    
+        switch (can_msg_id) {
+        case CAN_ID::LINE_RAW_SENSOR_DATA: {
+            t_line_sensor_raw_data data;
+            if (frame.rtr){
+                update_struct(&data);
+            }
+            else {
+                memcpy(&data, frame.buf, sizeof(data));
+                handle_struct(data);
+            }
+            break;
+        }
+        case CAN_ID::LINE_SENSOR_DATA: {
+            t_line_sensor_data data;
+            if (frame.rtr){
+                update_struct(&data);
+            }
+            else {
+                memcpy(&data, frame.buf, sizeof(data));
+                handle_struct(data);
+            }
+            break;
+        }
     }
 }
 
