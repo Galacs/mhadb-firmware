@@ -88,7 +88,8 @@ bool CanController::receive_can(t_can_frame* frame) {
 
 void CanController::handle_can() {
     t_can_frame frame;
-    if (receive_can(&frame)) {
+    if (!receive_can(&frame)) {
+        return;
         // Serial.println("received can in the handler");
     }
     uint32_t can_msg_id = frame.id;
