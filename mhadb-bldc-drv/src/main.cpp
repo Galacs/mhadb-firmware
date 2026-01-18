@@ -39,12 +39,16 @@ TwoWire Wire2(PB11, PB10);
 Commander command = Commander(Serial3);
 void doMotor(char* cmd) { command.motor(&motor, cmd); }
 
+bool a = true;
+
 struct __attribute__ ((packed)) t_motor_command   {
   uint8_t id;
   uint16_t value;
 };
 
 void setup() {
+  pinMode(PC13, OUTPUT);
+
   pinMode(INLA, OUTPUT);
   pinMode(INLB, OUTPUT);
   pinMode(INLC, OUTPUT);
@@ -117,32 +121,34 @@ void setup() {
   // Real time FOC
   HardwareTimer* timer = new HardwareTimer(TIM2);
   // Set timer frequency to 10kHz
-  timer->setOverflow(10000, HERTZ_FORMAT);
+  timer->setOverflow(1200, HERTZ_FORMAT); // MAX 1500
   // add the loopFOC and move to the timer
   timer->attachInterrupt([](){
     // call the loopFOC and move functions
+    digitalWrite(PC13, a);
+    a = !a;
+
     motor.loopFOC();
     motor.move();
   });
   // start the timer
   timer->resume();
 }
-
 int i = 0;
 void loop() {
+  t_line_sensor_raw_data a {.id=10, .value=(int)motor.shaft_velocity};
 
-  t_line_sensor_raw_data a {.id=10, .value=126};
-
-  //can.send_struct(a);
+  can.send_struct(a);
  
-  //can.handle_can();
+  can.handle_can();
 
   command.run();
   motor.monitor();
 
   // read_can();
   //delay(200);
-  //Serial.printf("running..., %d\n", i);
+  Serial.printf("running..., %d\n", i);
   i++;
+  delay(50);
 
 }

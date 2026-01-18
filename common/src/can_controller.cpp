@@ -8,8 +8,8 @@ void CanController::init()
 {
     m_stm32CAN = STM32_CAN(CAN1, DEF);
     m_stm32CAN.begin(false);
-    m_stm32CAN.setBaudRate(500000);
-    //m_stm32CAN.enableLoopBack();
+    m_stm32CAN.setBaudRate(100000);
+    // m_stm32CAN.enableLoopBack();
 }
 
 void CanController::send_can(uint32_t id, uint8_t *data, uint8_t data_len) {
