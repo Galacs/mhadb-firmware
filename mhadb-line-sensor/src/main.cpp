@@ -23,7 +23,15 @@
 #define LS8 PB0
 #define LS9 PB1
 
-class LineCanController: public CanController {};
+class LineCanController: public CanController {
+public:
+  void handle_struct(t_bldc_current_pos data) {
+    // Serial.printf("Line pos: %d\n", data.shaft_angle);
+    // Serial.printf("yay: %f", data.shaft_angle);
+    Serial.print("oof: ");
+    Serial.println(data.shaft_angle);
+  }
+};
 
 LineCanController Can;
 
@@ -126,20 +134,10 @@ void update_can(uint16_t* values) {
   // Serial.printf("can to be line pos: %d\n", msg_content.line_pos);
   Can.send_struct(msg_content);
 
-  // Decode example
-  // t_line_sensor_raw_data msg_content;
-  // memcpy(&msg_content, CAN_TX_msg.buf, sizeof(msg_content));
-  // Serial.println(msg_content.value);
-
-  // Can.write(CAN_TX_msg);
 }
 
 // void read_can() {
-//   if (Can.read(CAN_RX_msg)) {
-//     Serial.print("received id: ");
-//     Serial.println(CAN_RX_msg.id);
-//   }
-// }
+
 
 void setup() {
   Serial.setRx(PB7);
@@ -149,8 +147,8 @@ void setup() {
   Can.init();
   // delay(1000);
   Serial.println("salut rhey");
+  Can.send_rtr(CAN_ID::BLDC_CURRENT_POS);
 
-  // put your setup code here, to run once:
   // Pins used for serial on devboard
   // pinMode(BTN1, INPUT_PULLUP);
   // pinMode(BTN2, INPUT_PULLUP);
@@ -162,6 +160,7 @@ void loop() {
   print_line_values(line_sensors);
   update_can(line_sensors);
   update_leds(line_sensors);
-  // read_can();
-  delay(50);
+  Can.handle_can();
+  // Can.send_rtr(CAN_ID::BLDC_CURRENT_POS);
+  delay(100);
 }

@@ -18,18 +18,6 @@
 
 float motor_target = 0;
 
-class BldcCanController: public CanController
-{
-public:
-  void handle_struct(t_line_sensor_data data) {
-    Serial.printf("Line pos: %d\n", data.line_pos);
-    motor_target = map(data.line_pos, -4000, 4000, -50, 50);
-  }
-
-};
-
-BldcCanController can;
-
 //HardwareSerial Serial3(PB11, PB10);
 
 BLDCMotor motor = BLDCMotor(7);
@@ -39,8 +27,29 @@ BLDCDriver3PWM driver = BLDCDriver3PWM(INHA , INHB, INHC);
 MagneticSensorI2C sensor = MagneticSensorI2C(AS5600_I2C);
 TwoWire Wire2(PB11, PB10);
 
-Commander command = Commander(Serial3);
-void doMotor(char* cmd) { command.motor(&motor, cmd); }
+class BldcCanController: public CanController
+{
+public:
+  void handle_struct(t_line_sensor_data data) {
+    Serial.printf("Line pos: %d\n", data.line_pos);
+    // Serial.println(sizeof(t_bldc_current_pos));
+    motor_target = map(data.line_pos, -4000, 4000, -50, 50);
+  }
+  bool update_struct(t_bldc_current_pos* data) {
+    data->motor_id = data->RIGHT;
+    data->shaft_angle = motor.shaft_angle;
+    // data->shaft_angle = 10.5;
+    // Serial.printf("%f will be sent", data->shaft_angle);
+    Serial.println(data->shaft_angle);
+    Serial.println("received rtr");
+    return true;
+  }
+};
+
+BldcCanController can;
+
+// Commander command = Commander(Serial3);
+// void doMotor(char* cmd) { command.motor(&motor, cmd); }
 
 bool a = true;
 
@@ -66,9 +75,9 @@ void setup() {
   can.init();
 
   // SimpleFOC setup
-  SimpleFOCDebug::enable(&Serial3);
+  // SimpleFOCDebug::enable(&Serial3);
 
-  command.verbose = VerboseMode::machine_readable;
+  // command.verbose = VerboseMode::machine_readable;
 
   sensor.init(&Wire2);
 
@@ -90,8 +99,8 @@ void setup() {
   driver.pwm_frequency = 30000;
 
   // comment out if not needed
-  motor.useMonitoring(Serial3);
-  motor.monitor_downsample = 0; // disable monitor at first - optional
+  // motor.useMonitoring(Serial3);
+  // motor.monitor_downsample = 0; // disable monitor at first - optional
 
   // controller configuration based on the control type 
 
@@ -112,7 +121,7 @@ void setup() {
   motor.initFOC();
 
   // add target command M
-  command.add('M', doMotor, "motor");
+  // command.add('M', doMotor, "motor");
 
   Serial3.println(F("Motor ready."));
   Serial3.println(F("Set the target velocity using Serial3 terminal:"));
@@ -145,8 +154,8 @@ void loop() {
  
   can.handle_can();
 
-  command.run();
-  motor.monitor();
+  // command.run();
+  // motor.monitor();
   t_can_frame frame;
   // if (can.receive_can(&frame)) {
   //   Serial.println("received");

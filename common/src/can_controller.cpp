@@ -11,11 +11,12 @@ void CanController::init()
     // m_stm32CAN.enableLoopBack();
 }
 
-void CanController::send_can(uint32_t id, uint8_t *data, uint8_t data_len) {
-    m_tx_msg.id = id;
-    m_tx_msg.len = data_len;
+void CanController::send_can(t_can_frame frame) {
+    m_tx_msg.id = frame.id;
+    m_tx_msg.len = frame.len;
+    m_tx_msg.flags.remote = frame.rtr;
     // Serial.printf("data len: %d\n", data_len);
-    memcpy(&m_tx_msg.buf, data, data_len);
+    memcpy(&m_tx_msg.buf, frame.buf, frame.len);
     if (m_stm32CAN.write(m_tx_msg)) {
         // Serial.println("can sent");
     };
@@ -94,37 +95,70 @@ void CanController::handle_can() {
         // Serial.println("received can in the handler");
     }
     uint32_t can_msg_id = frame.id;
-    // Serial.printf("The can id: %d\n", can_msg_id);    
-        switch (can_msg_id) {
-        case CAN_ID::LINE_RAW_SENSOR_DATA: {
-            t_line_sensor_raw_data data;
-            if (frame.rtr){
-                update_struct(&data);
-            }
-            else {
-                memcpy(&data, frame.buf, sizeof(data));
-                handle_struct(data);
-            }
-            break;
+    // Serial.printf("The can id: %d\n", can_msg_id);
+    bool res;
+    switch (can_msg_id) {
+    case CAN_ID::LINE_RAW_SENSOR_DATA: {
+        t_line_sensor_raw_data data;
+        if (frame.rtr){
+            if (update_struct(&data)) {
+                send_struct(data);
+            };
         }
-        case CAN_ID::LINE_SENSOR_DATA: {
-            t_line_sensor_data data;
-            if (frame.rtr){
-                update_struct(&data);
-            }
-            else {
-                memcpy(&data, frame.buf, sizeof(data));
-                handle_struct(data);
-            }
-            break;
+        else {
+            memcpy(&data, frame.buf, sizeof(data));
+            handle_struct(data);
         }
+        break;
     }
+    case CAN_ID::LINE_SENSOR_DATA: {
+        t_line_sensor_data data;
+        if (frame.rtr){
+            if (update_struct(&data)) {
+                send_struct(data);
+            };
+        }
+        else {
+            memcpy(&data, frame.buf, sizeof(data));
+            handle_struct(data);
+        }
+        break;
+    }
+    case CAN_ID::BLDC_CURRENT_POS: {
+        t_bldc_current_pos data;
+        if (frame.rtr){
+            if (update_struct(&data)) {
+                send_struct(data);
+            };
+        }
+        else {
+            memcpy(&data, frame.buf, sizeof(data));
+            handle_struct(data);
+        }
+        break;
+    }
+}
+}
+
+void CanController::send_rtr(CAN_ID msg_id) {
+    t_can_frame frame {.id=msg_id, .rtr=true};
+    send_can(frame);
 }
 
 void CanController::send_struct(t_line_sensor_raw_data data) {
-    send_can(CAN_ID::LINE_RAW_SENSOR_DATA, (uint8_t*) &data, sizeof(data));
+    t_can_frame frame {.id=CAN_ID::LINE_RAW_SENSOR_DATA, .len= sizeof(data)};
+    memcpy(&frame.buf, &data, frame.len);
+    send_can(frame);
 }
 
 void CanController::send_struct(t_line_sensor_data data) {
-    send_can(CAN_ID::LINE_SENSOR_DATA, (uint8_t*) &data, sizeof(data));
+    t_can_frame frame {.id=CAN_ID::LINE_SENSOR_DATA, .len= sizeof(data)};
+    memcpy(&frame.buf, &data, frame.len);
+    send_can(frame);
+}
+
+void CanController::send_struct(t_bldc_current_pos data) {
+    t_can_frame frame {.id=CAN_ID::BLDC_CURRENT_POS, .len= sizeof(data)};
+    memcpy(&frame.buf, &data, frame.len);
+    send_can(frame);
 }
