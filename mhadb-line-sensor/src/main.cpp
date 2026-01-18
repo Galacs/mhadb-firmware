@@ -26,7 +26,6 @@
 class LineCanController: public CanController {};
 
 LineCanController Can;
-static CAN_message_t CAN_RX_msg;
 
 int sensors[] = {LS1, LS2, LS3, LS4, LS5, LS6, LS7, LS8, LS9 };
 
@@ -84,34 +83,47 @@ void update_leds(uint16_t*  values) {
 
 void update_line_sensors(int* sensors, uint16_t*  values) {
   for (size_t i = 0; i < 10; i++) {
-    values[i] = analogRead(sensors[i]);
+    // Devboard sensors
+    if (i == 3 /*|| i == 4*/ || i == 5) {
+      values[i] = analogRead(sensors[i]);
+    } else {
+      values[i] = 0;
+    }
   }
 }
 
 void print_line_values(uint16_t* values) {
      for (size_t i = 0; i < 10; i++) {
         Serial.print(values[i]);
-        Serial.print(" ");
+        Serial.print('\t');
      }
      Serial.println("");
 }
 
 int16_t get_line_position(uint16_t* values) {
   // TODO: Moyenne réduite
-  const uint8_t weights[] = {4, 14, 24, 34, 44};
-  uint32_t total_moy = 0;
+  // const uint8_t weights[] = {4, 14, 24, 34, 44};
+  // Devboard
+  const uint8_t weights[] = {30, 30, 30, 30, 30};
+  int32_t total_moy = 0;
   for (uint8_t i = 0; i < 10; i++) {
-    total_moy += weights[i % 5] * values[i] * -(i < 5);
+    // Serial.println(weights[i % 4] * values[i] * ((i < 4)? 1: -1));
+    // TODO: les poids ne sont pas symmétriques
+    total_moy += weights[i % 4] * values[i] * ((i < 4)? 1: -1);
   }
-  return total_moy/(120);
+  Serial.printf("Line pos: %d \t", total_moy);
+  // Devboard
+  // return total_moy/(120);
+  return total_moy;
 }
 
 void update_can(uint16_t* values) {
-  for (uint8_t i = 0; i < 10; i++) {
-    t_line_sensor_raw_data msg_content = {i, values[i]};
-    Can.send_struct(msg_content);
-  }
+  // for (uint8_t i = 0; i < 10; i++) {
+  //   t_line_sensor_raw_data msg_content = {i, values[i]};
+  //   Can.send_struct(msg_content);
+  // }
   t_line_sensor_data msg_content { .line_pos=get_line_position(values) };
+  // Serial.printf("can to be line pos: %d\n", msg_content.line_pos);
   Can.send_struct(msg_content);
 
   // Decode example
@@ -130,13 +142,18 @@ void update_can(uint16_t* values) {
 // }
 
 void setup() {
+  Serial.setRx(PB7);
+  Serial.setTx(PB6);
   Serial.begin(115200);
 
   Can.init();
+  // delay(1000);
+  Serial.println("salut rhey");
 
   // put your setup code here, to run once:
-  pinMode(BTN1, INPUT_PULLUP);
-  pinMode(BTN2, INPUT_PULLUP);
+  // Pins used for serial on devboard
+  // pinMode(BTN1, INPUT_PULLUP);
+  // pinMode(BTN2, INPUT_PULLUP);
 
 }
 
@@ -146,6 +163,5 @@ void loop() {
   update_can(line_sensors);
   update_leds(line_sensors);
   // read_can();
-  delay(1000);
-  // put your main code here, to run repeatedly:
+  delay(50);
 }
