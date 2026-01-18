@@ -2,34 +2,33 @@
 #include <Arduino.h>
 
 #ifdef ARDUINO_ARCH_STM32
-CanController::CanController(): m_stm32CAN(STM32_CAN(CAN1, DEF)), m_tx_msg {}, m_rx_msg {} {}
+CanController::CanController(): m_stm32CAN(CAN1, DEF) {}
 
 void CanController::init()
 {
-    m_stm32CAN = STM32_CAN(CAN1, DEF);
-    m_stm32CAN.begin(false);
+    m_stm32CAN.begin();
     m_stm32CAN.setBaudRate(100000);
     // m_stm32CAN.enableLoopBack();
 }
 
 void CanController::send_can(uint32_t id, uint8_t *data, uint8_t data_len) {
-    m_tx_msg.id = CAN_ID::LINE_RAW_SENSOR_DATA;
+    m_tx_msg.id = id;
     m_tx_msg.len = data_len;
-    Serial.printf("data len: %d\n", data_len);
+    // Serial.printf("data len: %d\n", data_len);
     memcpy(&m_tx_msg.buf, data, data_len);
     if (m_stm32CAN.write(m_tx_msg)) {
-        Serial.println("can sent");
+        // Serial.println("can sent");
     };
 }
 
 bool CanController::receive_can(t_can_frame* frame) {
     if (!m_stm32CAN.read(m_rx_msg)){
-        Serial.println("no can frames");
+        // Serial.println("no can frames");
         return false;
     }
 
-    frame->id = m_rx_msg.id;
-    frame->len = m_rx_msg.len;
+    frame->id = this->m_rx_msg.id;
+    frame->len = this->m_rx_msg.len;
     memcpy(frame->buf, &m_rx_msg.buf, m_rx_msg.len);
     return true;
 }
@@ -89,8 +88,11 @@ bool CanController::receive_can(t_can_frame* frame) {
 
 void CanController::handle_can() {
     t_can_frame frame;
-    receive_can(&frame);
+    if (receive_can(&frame)) {
+        // Serial.println("received can in the handler");
+    }
     uint32_t can_msg_id = frame.id;
+    // Serial.printf("The can id: %d\n", can_msg_id);
     switch (can_msg_id) {
     case CAN_ID::LINE_RAW_SENSOR_DATA: {
         t_line_sensor_raw_data data;
@@ -99,6 +101,7 @@ void CanController::handle_can() {
         break;
     }
     case CAN_ID::LINE_SENSOR_DATA: {
+        // Serial.println("itsa lina data");
         t_line_sensor_data data;
         memcpy(&data, frame.buf, sizeof(data));
         handle_struct(data);
