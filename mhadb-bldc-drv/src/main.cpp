@@ -16,11 +16,14 @@
 
 #define Serial3 Serial
 
+float motor_target = 0;
+
 class BldcCanController: public CanController
 {
 public:
-  void handle_struct(t_line_sensor_raw_data data) {
-    Serial.println("sdfsdsdf received");
+  void handle_struct(t_line_sensor_data data) {
+    Serial.printf("Line pos: %d\n", data.line_pos);
+    motor_target = map(data.line_pos, -4000, 4000, -50, 50);
   }
 
 };
@@ -129,7 +132,7 @@ void setup() {
     a = !a;
 
     motor.loopFOC();
-    motor.move();
+    motor.move(motor_target);
   });
   // start the timer
   timer->resume();
@@ -138,17 +141,21 @@ int i = 0;
 void loop() {
   t_line_sensor_raw_data a {.id=10, .value=(int)motor.shaft_velocity};
 
-  can.send_struct(a);
+  // can.send_struct(a);
  
   can.handle_can();
 
   command.run();
   motor.monitor();
+  t_can_frame frame;
+  // if (can.receive_can(&frame)) {
+  //   Serial.println("received");
+  // }
 
   // read_can();
   //delay(200);
-  Serial.printf("running..., %d\n", i);
+  // Serial.printf("running..., %d\n", i);
   i++;
-  delay(50);
+  // delay(200);
 
 }
