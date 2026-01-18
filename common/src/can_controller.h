@@ -22,6 +22,7 @@ enum CAN_ID {
   LINE_SENSOR_DATA = 0x40,
   LINE_RAW_SENSOR_DATA = 0x50,
   BLDC_CURRENT_POS = 0x60,
+  BLDC_CURRENT_SPEED = 0x70,
 };
 
 struct __attribute__ ((packed)) t_line_sensor_raw_data {
@@ -39,6 +40,14 @@ struct __attribute__ ((packed)) t_bldc_current_pos {
     LEFT,
   } motor_id;
   float shaft_angle;
+};
+
+struct __attribute__ ((packed)) t_bldc_current_speed {
+  enum motor_id_t {
+    RIGHT,
+    LEFT,
+  } motor_id;
+  float speed;
 };
 
 struct t_can_frame {
@@ -68,14 +77,17 @@ public:
   void send_struct(t_line_sensor_raw_data data);
   void send_struct(t_line_sensor_data data);
   void send_struct(t_bldc_current_pos data);
+  void send_struct(t_bldc_current_speed data);
 
   virtual void handle_struct(t_line_sensor_raw_data data) {};
   virtual void handle_struct(t_line_sensor_data data) {};
   virtual void handle_struct(t_bldc_current_pos data) {};
+  virtual void handle_struct(t_bldc_current_speed data) {};
 
   virtual bool update_struct(t_line_sensor_raw_data* data) {return false;};
   virtual bool update_struct(t_line_sensor_data* data) {return false;};
   virtual bool update_struct(t_bldc_current_pos* data) {return false;};
+  virtual bool update_struct(t_bldc_current_speed* data) {return false;};
 
 private:
 #ifdef ARDUINO_ARCH_STM32

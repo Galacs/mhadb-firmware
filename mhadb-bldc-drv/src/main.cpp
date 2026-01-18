@@ -44,6 +44,11 @@ public:
     Serial.println("received rtr");
     return true;
   }
+    bool update_struct(t_bldc_current_speed* data) {
+    data->motor_id = data->RIGHT;
+    data->speed = motor.shaft_velocity;
+    return true;
+  }
 };
 
 BldcCanController can;

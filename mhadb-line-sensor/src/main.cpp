@@ -30,6 +30,11 @@ public:
     // Serial.printf("yay: %f", data.shaft_angle);
     Serial.print("oof: ");
     Serial.println(data.shaft_angle);
+    // Serial.println(sizeof(t_bldc_current_pos));
+  }
+    void handle_struct(t_bldc_current_speed data) {
+    Serial.print("speed: ");
+    Serial.println(data.speed);
   }
 };
 
@@ -148,6 +153,7 @@ void setup() {
   // delay(1000);
   Serial.println("salut rhey");
   Can.send_rtr(CAN_ID::BLDC_CURRENT_POS);
+  Can.send_rtr(CAN_ID::BLDC_CURRENT_SPEED);
 
   // Pins used for serial on devboard
   // pinMode(BTN1, INPUT_PULLUP);

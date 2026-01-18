@@ -137,6 +137,19 @@ void CanController::handle_can() {
         }
         break;
     }
+    case CAN_ID::BLDC_CURRENT_SPEED: {
+        t_bldc_current_speed data;
+        if (frame.rtr){
+            if (update_struct(&data)) {
+                send_struct(data);
+            };
+        }
+        else {
+            memcpy(&data, frame.buf, sizeof(data));
+            handle_struct(data);
+        }
+        break;
+    }
 }
 }
 
@@ -159,6 +172,12 @@ void CanController::send_struct(t_line_sensor_data data) {
 
 void CanController::send_struct(t_bldc_current_pos data) {
     t_can_frame frame {.id=CAN_ID::BLDC_CURRENT_POS, .len= sizeof(data)};
+    memcpy(&frame.buf, &data, frame.len);
+    send_can(frame);
+}
+
+void CanController::send_struct(t_bldc_current_speed data) {
+    t_can_frame frame {.id=CAN_ID::BLDC_CURRENT_SPEED, .len= sizeof(data)};
     memcpy(&frame.buf, &data, frame.len);
     send_can(frame);
 }
