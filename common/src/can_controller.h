@@ -12,10 +12,7 @@
 
 // To add a new can messages you have to:
 // - Define the can message id in the CAN_ID enum with the right order based on the ids
-// - Create the packed struct that can't exceed 8 bytes
-// - Add the send_struct function with the right can id and size
-// - Add the handle_struct function definition and default implementation {}
-// - Add the update_struct function definition and default implementation {}
+// - Create the packed struct containing the CAN_ID as a static constexpr that can't exceed 8 bytes
 // - Add the correct case to handle_can()'s switch
 
 enum CAN_ID {
@@ -84,7 +81,6 @@ public:
     memcpy(&frame.buf, &data, frame.len);
     send_can(frame);
   }
-
 
   template<typename T>
   void handle_struct(T data) {};
