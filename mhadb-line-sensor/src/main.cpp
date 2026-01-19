@@ -23,7 +23,7 @@
 #define LS8 PB0
 #define LS9 PB1
 
-class LineCanController: public CanController {
+class LineCanHandler {
 public:
   void handle_struct(t_bldc_current_pos data) {
     // Serial.printf("Line pos: %d\n", data.shaft_angle);
@@ -36,9 +36,15 @@ public:
     Serial.print("speed: ");
     Serial.println(data.speed);
   }
+
+  template<typename T>
+  void handle_struct(T data) {};
+  template<typename T>
+  bool update_struct(T* data) {return false;};
 };
 
-LineCanController Can;
+CanController Can;
+LineCanHandler handler;
 
 int sensors[] = {LS1, LS2, LS3, LS4, LS5, LS6, LS7, LS8, LS9 };
 
@@ -166,7 +172,7 @@ void loop() {
   print_line_values(line_sensors);
   update_can(line_sensors);
   update_leds(line_sensors);
-  Can.handle_can();
+  Can.handle_can(&handler);
   // Can.send_rtr(CAN_ID::BLDC_CURRENT_POS);
   delay(100);
 }

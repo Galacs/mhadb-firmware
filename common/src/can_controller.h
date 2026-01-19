@@ -58,6 +58,21 @@ struct t_can_frame {
   bool rtr = false;
 };
 
+#define HANDLE_MSG(MSG_T) \
+  case MSG_T::ID: { \
+      MSG_T data; \
+      if (frame.rtr){ \
+          if (handler->update_struct(&data)) { \
+              send_struct(data); \
+          }; \
+      } \
+      else { \
+          memcpy(&data, frame.buf, sizeof(data)); \
+          handler->handle_struct(data); \
+      } \
+      break; \
+  } \
+
 class CanController {
 public:
   CanController();
@@ -71,8 +86,6 @@ public:
   void send_can(t_can_frame frame);
   bool receive_can(t_can_frame* frame);
 
-  void handle_can();
-  
   void send_rtr(CAN_ID msg_id);
 
   template<typename T>
@@ -82,11 +95,28 @@ public:
     send_can(frame);
   }
 
-  template<typename T>
-  void handle_struct(T data) {};
+  template<typename handler_t>
+  void handle_can(handler_t *handler) {
+    t_can_frame frame;
+    if (!receive_can(&frame)) {
+        return;
+        // Serial.println("received can in the handler");
+    }
+    uint32_t can_msg_id = frame.id;
+    // Serial.printf("The can id: %d\n", can_msg_id);
+    bool res;
+    switch (can_msg_id) {
+        HANDLE_MSG(t_line_sensor_raw_data);
+        HANDLE_MSG(t_line_sensor_data);
+        HANDLE_MSG(t_bldc_current_pos);
+        HANDLE_MSG(t_bldc_current_speed);
+    }
+  }
+  // template<typename T>
+  // void handle_struct(T data) {};
 
-  template<typename T>
-  bool update_struct(T* data) {return false;};
+  // template<typename T>
+  // bool update_struct(T* data) {return false;};
 
 private:
 #ifdef ARDUINO_ARCH_STM32

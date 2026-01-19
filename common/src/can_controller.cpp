@@ -90,38 +90,6 @@ bool CanController::receive_can(t_can_frame* frame) {
 }
 #endif
 
-#define HANDLE_MSG(MSG_T) \
-    case MSG_T::ID: { \
-        MSG_T data; \
-        if (frame.rtr){ \
-            if (update_struct(&data)) { \
-                send_struct(data); \
-            }; \
-        } \
-        else { \
-            memcpy(&data, frame.buf, sizeof(data)); \
-            handle_struct(data); \
-        } \
-        break; \
-    } \
-
-void CanController::handle_can() {
-    t_can_frame frame;
-    if (!receive_can(&frame)) {
-        return;
-        // Serial.println("received can in the handler");
-    }
-    uint32_t can_msg_id = frame.id;
-    // Serial.printf("The can id: %d\n", can_msg_id);
-    bool res;
-    switch (can_msg_id) {
-        HANDLE_MSG(t_line_sensor_raw_data);
-        HANDLE_MSG(t_line_sensor_data);
-        HANDLE_MSG(t_bldc_current_pos);
-        HANDLE_MSG(t_bldc_current_speed);
-    }
-}
-
 void CanController::send_rtr(CAN_ID msg_id) {
     t_can_frame frame {.id=msg_id, .rtr=true};
     send_can(frame);

@@ -27,9 +27,9 @@ BLDCDriver3PWM driver = BLDCDriver3PWM(INHA , INHB, INHC);
 MagneticSensorI2C sensor = MagneticSensorI2C(AS5600_I2C);
 TwoWire Wire2(PB11, PB10);
 
-class BldcCanController: public CanController
+class BldcCanHandler
 {
-public:
+  public:
   void handle_struct(t_line_sensor_data data) {
     Serial.printf("Line pos: %d\n", data.line_pos);
     // Serial.println(sizeof(t_bldc_current_pos));
@@ -49,9 +49,15 @@ public:
     data->speed = motor.shaft_velocity;
     return true;
   }
+
+  template<typename T>
+  void handle_struct(T data) {};
+  template<typename T>
+  bool update_struct(T* data) {return false;};
 };
 
-BldcCanController can;
+CanController can;
+BldcCanHandler handler;
 
 // Commander command = Commander(Serial3);
 // void doMotor(char* cmd) { command.motor(&motor, cmd); }
@@ -157,7 +163,7 @@ void loop() {
 
   // can.send_struct(a);
  
-  can.handle_can();
+  can.handle_can(&handler);
 
   // command.run();
   // motor.monitor();
