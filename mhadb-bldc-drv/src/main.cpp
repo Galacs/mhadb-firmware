@@ -27,6 +27,9 @@ BLDCDriver3PWM driver = BLDCDriver3PWM(INHA , INHB, INHC);
 MagneticSensorI2C sensor = MagneticSensorI2C(AS5600_I2C);
 TwoWire Wire2(PB11, PB10);
 
+// Real time FOC
+HardwareTimer* timer = new HardwareTimer(TIM2);
+
 class BldcCanHandler
 {
   public:
@@ -35,6 +38,17 @@ class BldcCanHandler
     // Serial.println(sizeof(t_bldc_current_pos));
     motor_target = map(data.line_pos, -4000, 4000, -50, 50);
   }
+
+  void handle_struct(t_bldc_alignement_start data) {
+    timer->pause();
+    Serial.println("aligning...");
+    motor.zero_electric_angle  = NOT_SET;
+    motor.sensor_direction = Direction::UNKNOWN; // CW or CCW
+    motor.initFOC();
+    Serial.println("aligned...");
+    timer->resume();
+  }
+
   bool update_struct(t_bldc_current_pos* data) {
     data->motor_id = data->RIGHT;
     data->shaft_angle = motor.shaft_angle;
@@ -141,8 +155,6 @@ void setup() {
   Serial3.println("Target velocity: 1 rad/s");
   Serial3.println("Voltage limit 2V");
 
-  // Real time FOC
-  HardwareTimer* timer = new HardwareTimer(TIM2);
   // Set timer frequency to 10kHz
   timer->setOverflow(1200, HERTZ_FORMAT); // MAX 1500
   // add the loopFOC and move to the timer

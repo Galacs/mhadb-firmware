@@ -20,6 +20,7 @@ enum CAN_ID {
   LINE_RAW_SENSOR_DATA = 0x50,
   BLDC_CURRENT_POS = 0x60,
   BLDC_CURRENT_SPEED = 0x70,
+  BLDC_ALIGNEMENT_START = 0x80,
 };
 
 struct __attribute__ ((packed)) t_line_sensor_raw_data {
@@ -49,6 +50,14 @@ struct __attribute__ ((packed)) t_bldc_current_speed {
     LEFT,
   } motor_id;
   float speed;
+};
+
+struct __attribute__ ((packed)) t_bldc_alignement_start {
+  static constexpr CAN_ID ID = BLDC_ALIGNEMENT_START;
+  enum motor_id_t {
+    RIGHT,
+    LEFT,
+  } motor_id;
 };
 
 struct t_can_frame {
@@ -110,6 +119,7 @@ public:
         HANDLE_MSG(t_line_sensor_data);
         HANDLE_MSG(t_bldc_current_pos);
         HANDLE_MSG(t_bldc_current_speed);
+        HANDLE_MSG(t_bldc_alignement_start);
     }
   }
   // template<typename T>
