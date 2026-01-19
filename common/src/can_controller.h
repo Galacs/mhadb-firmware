@@ -89,10 +89,8 @@ public:
   template<typename T>
   void handle_struct(T data) {};
 
-  virtual bool update_struct(t_line_sensor_raw_data* data) {return false;};
-  virtual bool update_struct(t_line_sensor_data* data) {return false;};
-  virtual bool update_struct(t_bldc_current_pos* data) {return false;};
-  virtual bool update_struct(t_bldc_current_speed* data) {return false;};
+  template<typename T>
+  bool update_struct(T* data) {return false;};
 
 private:
 #ifdef ARDUINO_ARCH_STM32
