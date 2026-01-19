@@ -26,15 +26,18 @@ enum CAN_ID {
 };
 
 struct __attribute__ ((packed)) t_line_sensor_raw_data {
+  static constexpr CAN_ID ID = LINE_RAW_SENSOR_DATA;
   uint8_t id;
   uint16_t  value;
 };
 
 struct __attribute__ ((packed)) t_line_sensor_data {
+  static constexpr CAN_ID ID = LINE_SENSOR_DATA;
   int16_t line_pos;
 };
 
 struct __attribute__ ((packed)) t_bldc_current_pos {
+  static constexpr CAN_ID ID = BLDC_CURRENT_POS;
   enum motor_id_t {
     RIGHT,
     LEFT,
@@ -43,6 +46,7 @@ struct __attribute__ ((packed)) t_bldc_current_pos {
 };
 
 struct __attribute__ ((packed)) t_bldc_current_speed {
+  static constexpr CAN_ID ID = BLDC_CURRENT_SPEED;
   enum motor_id_t {
     RIGHT,
     LEFT,
