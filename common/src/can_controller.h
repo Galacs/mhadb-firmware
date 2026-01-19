@@ -78,10 +78,13 @@ public:
   
   void send_rtr(CAN_ID msg_id);
 
-  void send_struct(t_line_sensor_raw_data data);
-  void send_struct(t_line_sensor_data data);
-  void send_struct(t_bldc_current_pos data);
-  void send_struct(t_bldc_current_speed data);
+  template<typename T>
+  void send_struct(T data) {
+    t_can_frame frame {.id=T::ID, .len= sizeof(data)};
+    memcpy(&frame.buf, &data, frame.len);
+    send_can(frame);
+  }
+
 
   virtual void handle_struct(t_line_sensor_raw_data data) {};
   virtual void handle_struct(t_line_sensor_data data) {};

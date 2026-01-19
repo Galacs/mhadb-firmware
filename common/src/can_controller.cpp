@@ -157,27 +157,3 @@ void CanController::send_rtr(CAN_ID msg_id) {
     t_can_frame frame {.id=msg_id, .rtr=true};
     send_can(frame);
 }
-
-void CanController::send_struct(t_line_sensor_raw_data data) {
-    t_can_frame frame {.id=t_line_sensor_raw_data::ID, .len= sizeof(data)};
-    memcpy(&frame.buf, &data, frame.len);
-    send_can(frame);
-}
-
-void CanController::send_struct(t_line_sensor_data data) {
-    t_can_frame frame {t_line_sensor_data::ID, .len= sizeof(data)};
-    memcpy(&frame.buf, &data, frame.len);
-    send_can(frame);
-}
-
-void CanController::send_struct(t_bldc_current_pos data) {
-    t_can_frame frame {t_bldc_current_pos::ID, .len= sizeof(data)};
-    memcpy(&frame.buf, &data, frame.len);
-    send_can(frame);
-}
-
-void CanController::send_struct(t_bldc_current_speed data) {
-    t_can_frame frame {t_bldc_current_speed::ID, .len= sizeof(data)};
-    memcpy(&frame.buf, &data, frame.len);
-    send_can(frame);
-}
