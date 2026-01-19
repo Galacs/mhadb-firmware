@@ -12,26 +12,28 @@ void CanController::init()
 }
 
 void CanController::send_can(t_can_frame frame) {
-    m_tx_msg.id = frame.id;
-    m_tx_msg.len = frame.len;
-    m_tx_msg.flags.remote = frame.rtr;
+    CAN_message_t tx_msg;
+    tx_msg.id = frame.id;
+    tx_msg.len = frame.len;
+    tx_msg.flags.remote = frame.rtr;
     // Serial.printf("data len: %d\n", data_len);
-    memcpy(&m_tx_msg.buf, frame.buf, frame.len);
-    if (m_stm32CAN.write(m_tx_msg)) {
+    memcpy(&tx_msg.buf, frame.buf, frame.len);
+    if (m_stm32CAN.write(tx_msg)) {
         // Serial.println("can sent");
     };
 }
 
 bool CanController::receive_can(t_can_frame* frame) {
-    if (!m_stm32CAN.read(m_rx_msg)){
+    CAN_message_t rx_msg;
+    if (!m_stm32CAN.read(rx_msg)){
         // Serial.println("no can frames");
         return false;
     }
 
-    frame->id = m_rx_msg.id;
-    frame->len = m_rx_msg.len;
-    frame->rtr = m_rx_msg.flags.remote;
-    memcpy(frame->buf, &m_rx_msg.buf, m_rx_msg.len);
+    frame->id = rx_msg.id;
+    frame->len = rx_msg.len;
+    frame->rtr = rx_msg.flags.remote;
+    memcpy(frame->buf, &rx_msg.buf, rx_msg.len);
     return true;
 }
 #endif

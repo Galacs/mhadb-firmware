@@ -99,7 +99,5 @@ public:
 private:
 #ifdef ARDUINO_ARCH_STM32
   STM32_CAN m_stm32CAN;
-  CAN_message_t m_tx_msg;
-  CAN_message_t m_rx_msg;
 #endif
 };
