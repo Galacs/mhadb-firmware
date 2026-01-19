@@ -86,10 +86,8 @@ public:
   }
 
 
-  virtual void handle_struct(t_line_sensor_raw_data data) {};
-  virtual void handle_struct(t_line_sensor_data data) {};
-  virtual void handle_struct(t_bldc_current_pos data) {};
-  virtual void handle_struct(t_bldc_current_speed data) {};
+  template<typename T>
+  void handle_struct(T data) {};
 
   virtual bool update_struct(t_line_sensor_raw_data* data) {return false;};
   virtual bool update_struct(t_line_sensor_data* data) {return false;};
