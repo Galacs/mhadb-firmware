@@ -13,7 +13,7 @@
 // To add a new can messages you have to:
 // - Define the can message id in the CAN_ID enum with the right order based on the ids
 // - Create the packed struct containing the CAN_ID as a static constexpr that can't exceed 8 bytes
-// - Add the correct case to handle_can()'s switch
+// - Add the correct case macro to handle_can()'s switch
 
 enum CAN_ID {
   LINE_SENSOR_DATA = 0x40,
