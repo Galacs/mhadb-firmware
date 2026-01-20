@@ -8,13 +8,6 @@
 // - Create the can message struct using the CAN_STRUCT(struct_name, can, fields...)
 // - Add the correct case macro to handle_can()'s switch
 
-#define CAN_STRUCT(struct_name, can_id, ...) \
-  struct __attribute__((packed)) struct_name { \
-    static constexpr CAN_ID ID = can_id; \
-    __VA_ARGS__ \
-  }; \
-  static_assert(sizeof(struct_name) <= 8, #struct_name " exceeds CAN frame size (8 bytes)"); \
-  static_assert(std::is_trivially_copyable<struct_name>::value, #struct_name " must be trivially copyable") \
 
 enum CAN_ID {
   LINE_SENSOR_DATA = 0x40,

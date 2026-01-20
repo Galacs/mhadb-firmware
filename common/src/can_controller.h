@@ -17,6 +17,14 @@ struct t_can_frame {
   bool rtr = false;
 };
 
+#define CAN_STRUCT(struct_name, can_id, ...) \
+  struct __attribute__((packed)) struct_name { \
+    static constexpr CAN_ID ID = can_id; \
+    __VA_ARGS__ \
+  }; \
+  static_assert(sizeof(struct_name) <= 8, #struct_name " exceeds CAN frame size (8 bytes)"); \
+  static_assert(std::is_trivially_copyable<struct_name>::value, #struct_name " must be trivially copyable") \
+
 #define HANDLE_MSG(HANDLER_T, MSG_T) \
   case MSG_T::ID: { \
       MSG_T data; \
