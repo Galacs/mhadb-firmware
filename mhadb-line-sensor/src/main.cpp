@@ -3,7 +3,7 @@
 
 #include "STM32_CAN.h"
 
-#include <can_controller.h>
+#include <can_messages.h>
 
 
 #define RGB1 PB12
@@ -25,26 +25,25 @@
 
 class LineCanHandler {
 public:
-  void handle_struct(t_bldc_current_pos data) {
+  static void handle_struct(t_bldc_current_pos data) {
     // Serial.printf("Line pos: %d\n", data.shaft_angle);
     // Serial.printf("yay: %f", data.shaft_angle);
     Serial.print("oof: ");
     Serial.println(data.shaft_angle);
     // Serial.println(sizeof(t_bldc_current_pos));
   }
-    void handle_struct(t_bldc_current_speed data) {
+  static void handle_struct(t_bldc_current_speed data) {
     Serial.print("speed: ");
     Serial.println(data.speed);
   }
 
   template<typename T>
-  void handle_struct(T data) {};
+  static void handle_struct(T data) {};
   template<typename T>
-  bool update_struct(T* data) {return false;};
+  static bool update_struct(T* data) {return false;};
 };
 
-CanController Can;
-LineCanHandler handler;
+CanController<MHADBCanController<LineCanHandler>> can;
 
 int sensors[] = {LS1, LS2, LS3, LS4, LS5, LS6, LS7, LS8, LS9 };
 
@@ -143,7 +142,7 @@ void update_can(uint16_t* values) {
   // }
   t_line_sensor_data msg_content { .line_pos=get_line_position(values) };
   // Serial.printf("can to be line pos: %d\n", msg_content.line_pos);
-  Can.send_struct(msg_content);
+  can.send_struct(msg_content);
 
 }
 
@@ -155,13 +154,13 @@ void setup() {
   Serial.setTx(PB6);
   Serial.begin(115200);
 
-  Can.init();
+  can.init();
   // delay(1000);
   Serial.println("salut rhey");
-  Can.send_rtr(CAN_ID::BLDC_CURRENT_POS);
-  Can.send_rtr(CAN_ID::BLDC_CURRENT_SPEED);
+  can.send_rtr(CAN_ID::BLDC_CURRENT_POS);
+  can.send_rtr(CAN_ID::BLDC_CURRENT_SPEED);
   t_bldc_alignement_start align_msg = {.motor_id=t_bldc_alignement_start::LEFT};
-  Can.send_struct(align_msg);
+  can.send_struct(align_msg);
 
   // Pins used for serial on devboard
   // pinMode(BTN1, INPUT_PULLUP);
@@ -174,7 +173,6 @@ void loop() {
   print_line_values(line_sensors);
   update_can(line_sensors);
   update_leds(line_sensors);
-  Can.handle_can(&handler);
-  // Can.send_rtr(CAN_ID::BLDC_CURRENT_POS);
+  can.handle_can();
   delay(100);
 }
