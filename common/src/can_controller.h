@@ -129,13 +129,17 @@ public:
 #endif
   
   void send_rtr(uint32_t msg_id) {
-    t_can_frame frame {.id=msg_id, .rtr=true};
+    t_can_frame frame {};
+    frame.id = msg_id;
+    frame.rtr = true;
     send_can(frame);
   };
 
   template<typename T>
   void send_struct(T data) {
-    t_can_frame frame {.id=T::ID, .len= sizeof(data)};
+    t_can_frame frame {};
+    frame.id = T::ID;
+    frame.len = sizeof(data);
     memcpy(&frame.buf, &data, frame.len);
     send_can(frame);
   }
