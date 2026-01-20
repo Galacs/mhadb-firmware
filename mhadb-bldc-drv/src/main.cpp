@@ -176,6 +176,14 @@ void setup() {
   });
   // start the timer
   timer->resume();
+
+  HardwareTimer* can_timer = new HardwareTimer(TIM3);
+  can_timer->setOverflow(120, HERTZ_FORMAT);
+  can_timer->attachInterrupt([](){
+    can.handle_can();
+  });
+  // start the timer
+  can_timer->resume();
 }
 int i = 0;
 void loop() {
@@ -183,7 +191,7 @@ void loop() {
 
   // can.send_struct(a);
  
-  can.handle_can();
+  // can.handle_can();
 
   // command.run();
   // motor.monitor();

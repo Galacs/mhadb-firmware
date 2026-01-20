@@ -38,9 +38,9 @@ public:
   }
 
   static void handle_struct(t_bldc_alignment_results data) {
-    Serial.print("zero angle: ");
-    Serial.println(data.zero_electric_angle);
-    Serial.printf("direction: %d\n", data.sensor_direction);
+    // Serial.print("zero angle: ");
+    // Serial.println(data.zero_electric_angle);
+    // Serial.printf("direction: %d\n", data.sensor_direction);
   }
 
   template<typename T>
@@ -135,7 +135,7 @@ int16_t get_line_position(uint16_t* values) {
     // TODO: les poids ne sont pas symmétriques
     total_moy += weights[i % 4] * values[i] * ((i < 4)? 1: -1);
   }
-  Serial.printf("Line pos: %d \t", total_moy);
+  // Serial.printf("Line pos: %d \t", total_moy);
   // Devboard
   // return total_moy/(120);
   return total_moy;
@@ -172,14 +172,22 @@ void setup() {
   // pinMode(BTN1, INPUT_PULLUP);
   // pinMode(BTN2, INPUT_PULLUP);
 
+  HardwareTimer* can_timer = new HardwareTimer(TIM2);
+  can_timer->setOverflow(120, HERTZ_FORMAT);
+  can_timer->attachInterrupt([](){
+    can.handle_can();
+    update_can(line_sensors);
+  });
+  // start the timer
+  can_timer->resume();
+
 }
 
 void loop() {
   update_line_sensors(sensors, line_sensors);
   print_line_values(line_sensors);
-  update_can(line_sensors);
   update_leds(line_sensors);
-  can.handle_can();
+  // can.handle_can();
   delay(100);
   can.send_rtr(CAN_ID::BLDC_ALIGNMENT_RESULTS);
 }
