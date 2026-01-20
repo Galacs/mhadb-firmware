@@ -101,12 +101,12 @@ public:
     }
   };
 
-  void send_can(uint32_t id, uint8_t *data, uint8_t data_len) {
+  void send_can(t_can_frame frame) {
       twai_message_t message;
-      message.identifier = CAN_ID::LINE_RAW_SENSOR_DATA;
-      message.data_length_code = data_len;
-      Serial.printf("data len: %d\n", data_len);
-      memcpy(&message.data, data, data_len);
+      message.identifier = frame.id;
+      message.data_length_code = frame.len;
+      Serial.printf("data len: %d\n", frame.len);
+      memcpy(&message.data, frame.buf, frame.len);
       if (twai_transmit(&message, pdMS_TO_TICKS(1000)) == ESP_OK) {
           printf("Message queued for transmission\n");
       } else {
