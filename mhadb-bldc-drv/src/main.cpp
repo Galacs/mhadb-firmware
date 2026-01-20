@@ -148,8 +148,9 @@ void setup() {
   // initialize motor
   motor.init();
   // align encoder and start FOC
-  motor.zero_electric_angle  = 4.36; // rad
+  motor.zero_electric_angle  = 4.36f; // rad
   motor.sensor_direction = Direction::CCW; // CW or CCW
+  motor.voltage_sensor_align = 10.0f;
   motor.initFOC();
 
   // add target command M
