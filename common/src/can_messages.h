@@ -4,7 +4,7 @@
 
 
 // To add a new can messages you have to:
-// - Define the can message id in the CAN_ID enum with the right order based on the ids
+// - Define the can message id in the CAN_ID enum with the right order based on the ids (check for duplicates!)
 // - Create the can message struct using the CAN_STRUCT(struct_name, can, fields...)
 // - Add the correct case macro to handle_can()'s switch
 
