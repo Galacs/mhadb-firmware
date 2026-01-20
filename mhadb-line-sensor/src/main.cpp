@@ -159,7 +159,7 @@ void setup() {
   Serial.println("salut rhey");
   can.send_rtr(CAN_ID::BLDC_CURRENT_POS);
   can.send_rtr(CAN_ID::BLDC_CURRENT_SPEED);
-  t_bldc_alignement_start align_msg = {.motor_id=t_bldc_alignement_start::LEFT};
+  t_bldc_alignment_start align_msg = {.motor_id=t_bldc_alignment_start::LEFT};
   can.send_struct(align_msg);
 
   // Pins used for serial on devboard

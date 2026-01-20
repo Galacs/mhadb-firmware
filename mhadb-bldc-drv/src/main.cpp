@@ -40,7 +40,7 @@ class BldcCanHandler
     motor_target = map(data.line_pos, -4000, 4000, -50, 50);
   }
 
-  static void handle_struct(t_bldc_alignement_start data) {
+  static void handle_struct(t_bldc_alignment_start data) {
     timer->pause();
     Serial.println("aligning...");
     motor.zero_electric_angle  = NOT_SET;
