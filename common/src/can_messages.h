@@ -15,6 +15,7 @@ enum CAN_ID {
   BLDC_CURRENT_POS = 0x60,
   BLDC_CURRENT_SPEED = 0x70,
   BLDC_ALIGNMENT_START = 0x80,
+  BLDC_ALIGNMENT_RESULTS = 0x90,
 };
 
 CAN_STRUCT(t_line_sensor_raw_data, CAN_ID::LINE_RAW_SENSOR_DATA,
@@ -27,7 +28,7 @@ CAN_STRUCT(t_line_sensor_data, CAN_ID::LINE_SENSOR_DATA,
 );
 
 CAN_STRUCT(t_bldc_current_pos, CAN_ID::BLDC_CURRENT_POS,
-  enum motor_id_t {
+  enum motor_id_t: int8_t {
     RIGHT,
     LEFT,
   } motor_id;
@@ -35,7 +36,7 @@ CAN_STRUCT(t_bldc_current_pos, CAN_ID::BLDC_CURRENT_POS,
 );
 
 CAN_STRUCT(t_bldc_current_speed, CAN_ID::BLDC_CURRENT_SPEED,
-  enum motor_id_t {
+  enum motor_id_t: int8_t {
     RIGHT,
     LEFT,
   } motor_id;
@@ -43,10 +44,19 @@ CAN_STRUCT(t_bldc_current_speed, CAN_ID::BLDC_CURRENT_SPEED,
 );
 
 CAN_STRUCT(t_bldc_alignment_start, CAN_ID::BLDC_ALIGNMENT_START,
-  enum motor_id_t {
+  enum motor_id_t: int8_t {
     RIGHT,
     LEFT,
   } motor_id;
+);
+
+CAN_STRUCT(t_bldc_alignment_results, CAN_ID::BLDC_ALIGNMENT_RESULTS,
+  enum motor_id_t: int8_t {
+    RIGHT,
+    LEFT,
+  } motor_id;
+  float zero_electric_angle;
+  int8_t sensor_direction;
 );
 
 template <typename handler_t>
@@ -59,6 +69,7 @@ public:
       HANDLE_MSG(handler_t, t_bldc_current_pos);
       HANDLE_MSG(handler_t, t_bldc_current_speed);
       HANDLE_MSG(handler_t, t_bldc_alignment_start);
+      HANDLE_MSG(handler_t, t_bldc_alignment_results);
     }
   };
 };

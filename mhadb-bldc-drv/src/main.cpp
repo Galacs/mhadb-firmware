@@ -65,6 +65,13 @@ class BldcCanHandler
     return true;
   }
 
+  static bool update_struct(t_bldc_alignment_results* data) {
+    data->motor_id = data->RIGHT;
+    data->zero_electric_angle = motor.zero_electric_angle;
+    data->sensor_direction = motor.sensor_direction;
+    return true;
+  }
+
   template<typename T>
   static void handle_struct(T data) {};
   template<typename T>

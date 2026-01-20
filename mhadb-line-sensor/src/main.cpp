@@ -37,6 +37,12 @@ public:
     Serial.println(data.speed);
   }
 
+  static void handle_struct(t_bldc_alignment_results data) {
+    Serial.print("zero angle: ");
+    Serial.println(data.zero_electric_angle);
+    Serial.printf("direction: %d\n", data.sensor_direction);
+  }
+
   template<typename T>
   static void handle_struct(T data) {};
   template<typename T>
@@ -175,4 +181,5 @@ void loop() {
   update_leds(line_sensors);
   can.handle_can();
   delay(100);
+  can.send_rtr(CAN_ID::BLDC_ALIGNMENT_RESULTS);
 }
