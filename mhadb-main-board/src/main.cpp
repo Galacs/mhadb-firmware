@@ -1,16 +1,19 @@
 #include <Arduino.h>
-#include "can_controller.h"
+#include "can_messages.h"
 
-class MainCanController: public CanController
+
+class LineCanHandler
 {
-public:
-  void handle_struct(t_line_sensor_raw_data data) {
-    Serial.println("sdfsdsdf received");
-  }
+  public:
 
+  template<typename T>
+  static void handle_struct(T data) {};
+  template<typename T>
+  static bool update_struct(T* data) {return false;};
 };
 
-MainCanController can;
+
+CanController<MHADBCanController<MainCanHandler>> can;
 
 void setup() {
   Serial.begin(115200);
