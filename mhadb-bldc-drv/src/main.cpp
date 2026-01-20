@@ -2,6 +2,7 @@
 #include <SimpleFOC.h>
 #include "STM32_CAN.h"
 #include <can_controller.h>
+#include <can_messages.h>
 
 #define INHA PA8
 #define INHB PA9
@@ -33,13 +34,13 @@ HardwareTimer* timer = new HardwareTimer(TIM2);
 class BldcCanHandler
 {
   public:
-  void handle_struct(t_line_sensor_data data) {
+  static void handle_struct(t_line_sensor_data data) {
     Serial.printf("Line pos: %d\n", data.line_pos);
     // Serial.println(sizeof(t_bldc_current_pos));
     motor_target = map(data.line_pos, -4000, 4000, -50, 50);
   }
 
-  void handle_struct(t_bldc_alignement_start data) {
+  static void handle_struct(t_bldc_alignement_start data) {
     timer->pause();
     Serial.println("aligning...");
     motor.zero_electric_angle  = NOT_SET;
@@ -49,7 +50,7 @@ class BldcCanHandler
     timer->resume();
   }
 
-  bool update_struct(t_bldc_current_pos* data) {
+  static bool update_struct(t_bldc_current_pos* data) {
     data->motor_id = data->RIGHT;
     data->shaft_angle = motor.shaft_angle;
     // data->shaft_angle = 10.5;
@@ -58,20 +59,19 @@ class BldcCanHandler
     Serial.println("received rtr");
     return true;
   }
-    bool update_struct(t_bldc_current_speed* data) {
+  static bool update_struct(t_bldc_current_speed* data) {
     data->motor_id = data->RIGHT;
     data->speed = motor.shaft_velocity;
     return true;
   }
 
   template<typename T>
-  void handle_struct(T data) {};
+  static void handle_struct(T data) {};
   template<typename T>
-  bool update_struct(T* data) {return false;};
+  static bool update_struct(T* data) {return false;};
 };
 
-CanController can;
-BldcCanHandler handler;
+CanController<MHADBCanController<BldcCanHandler>> can;
 
 // Commander command = Commander(Serial3);
 // void doMotor(char* cmd) { command.motor(&motor, cmd); }
@@ -175,7 +175,7 @@ void loop() {
 
   // can.send_struct(a);
  
-  can.handle_can(&handler);
+  can.handle_can();
 
   // command.run();
   // motor.monitor();

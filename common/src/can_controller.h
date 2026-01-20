@@ -10,56 +10,6 @@
 #endif
 
 
-// To add a new can messages you have to:
-// - Define the can message id in the CAN_ID enum with the right order based on the ids
-// - Create the packed struct containing the CAN_ID as a static constexpr that can't exceed 8 bytes
-// - Add the correct case macro to handle_can()'s switch
-
-enum CAN_ID {
-  LINE_SENSOR_DATA = 0x40,
-  LINE_RAW_SENSOR_DATA = 0x50,
-  BLDC_CURRENT_POS = 0x60,
-  BLDC_CURRENT_SPEED = 0x70,
-  BLDC_ALIGNEMENT_START = 0x80,
-};
-
-struct __attribute__ ((packed)) t_line_sensor_raw_data {
-  static constexpr CAN_ID ID = LINE_RAW_SENSOR_DATA;
-  uint8_t id;
-  uint16_t  value;
-};
-
-struct __attribute__ ((packed)) t_line_sensor_data {
-  static constexpr CAN_ID ID = LINE_SENSOR_DATA;
-  int16_t line_pos;
-};
-
-struct __attribute__ ((packed)) t_bldc_current_pos {
-  static constexpr CAN_ID ID = BLDC_CURRENT_POS;
-  enum motor_id_t {
-    RIGHT,
-    LEFT,
-  } motor_id;
-  float shaft_angle;
-};
-
-struct __attribute__ ((packed)) t_bldc_current_speed {
-  static constexpr CAN_ID ID = BLDC_CURRENT_SPEED;
-  enum motor_id_t {
-    RIGHT,
-    LEFT,
-  } motor_id;
-  float speed;
-};
-
-struct __attribute__ ((packed)) t_bldc_alignement_start {
-  static constexpr CAN_ID ID = BLDC_ALIGNEMENT_START;
-  enum motor_id_t {
-    RIGHT,
-    LEFT,
-  } motor_id;
-};
-
 struct t_can_frame {
   uint32_t id = 0;
   uint8_t buf[8] = { 0 };
@@ -67,35 +17,65 @@ struct t_can_frame {
   bool rtr = false;
 };
 
-#define HANDLE_MSG(MSG_T) \
+#define HANDLE_MSG(HANDLER_T, MSG_T) \
   case MSG_T::ID: { \
       MSG_T data; \
-      if (frame.rtr){ \
-          if (handler->update_struct(&data)) { \
-              send_struct(data); \
+      if (frame->rtr){ \
+          if (HANDLER_T::update_struct(&data)) { \
+              this->send_struct(data); \
           }; \
       } \
       else { \
-          memcpy(&data, frame.buf, sizeof(data)); \
-          handler->handle_struct(data); \
+          memcpy(&data, frame->buf, sizeof(data)); \
+          HANDLER_T::handle_struct(data); \
       } \
       break; \
   } \
 
+template<typename Child>
 class CanController {
 public:
-  CanController();
+  CanController(): m_stm32CAN(CAN1, DEF) {};
 #ifdef ARDUINO_ARCH_STM32
-  void init();
+  void init() {
+    m_stm32CAN.begin();
+    m_stm32CAN.setBaudRate(100000);
+  };
+
+  void send_can(t_can_frame frame) {
+    CAN_message_t tx_msg;
+    tx_msg.id = frame.id;
+    tx_msg.len = frame.len;
+    tx_msg.flags.remote = frame.rtr;
+    // Serial.printf("data len: %d\n", data_len);
+    memcpy(&tx_msg.buf, frame.buf, frame.len);
+    if (m_stm32CAN.write(tx_msg)) {
+        // Serial.println("can sent");
+    };
+  };
+
+  bool receive_can(t_can_frame* frame) {
+    CAN_message_t rx_msg;
+    if (!m_stm32CAN.read(rx_msg)){
+        // Serial.println("no can frames");
+        return false;
+    }
+
+    frame->id = rx_msg.id;
+    frame->len = rx_msg.len;
+    frame->rtr = rx_msg.flags.remote;
+    memcpy(frame->buf, &rx_msg.buf, rx_msg.len);
+    return true;
+  }
 #endif
 #ifdef ARDUINO_ARCH_ESP32
   void init(gpio_num_t rx, gpio_num_t tx);
 #endif
-
-  void send_can(t_can_frame frame);
-  bool receive_can(t_can_frame* frame);
-
-  void send_rtr(CAN_ID msg_id);
+  
+  void send_rtr(uint32_t msg_id) {
+    t_can_frame frame {.id=msg_id, .rtr=true};
+    send_can(frame);
+  };
 
   template<typename T>
   void send_struct(T data) {
@@ -104,29 +84,14 @@ public:
     send_can(frame);
   }
 
-  template<typename handler_t>
-  void handle_can(handler_t *handler) {
+  void handle_can() {
     t_can_frame frame;
     if (!receive_can(&frame)) {
         return;
-        // Serial.println("received can in the handler");
     }
-    uint32_t can_msg_id = frame.id;
     // Serial.printf("The can id: %d\n", can_msg_id);
-    bool res;
-    switch (can_msg_id) {
-        HANDLE_MSG(t_line_sensor_raw_data);
-        HANDLE_MSG(t_line_sensor_data);
-        HANDLE_MSG(t_bldc_current_pos);
-        HANDLE_MSG(t_bldc_current_speed);
-        HANDLE_MSG(t_bldc_alignement_start);
-    }
+    static_cast<Child*>(this)->handle_can_special(&frame);
   }
-  // template<typename T>
-  // void handle_struct(T data) {};
-
-  // template<typename T>
-  // bool update_struct(T* data) {return false;};
 
 private:
 #ifdef ARDUINO_ARCH_STM32
