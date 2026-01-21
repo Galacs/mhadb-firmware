@@ -152,7 +152,7 @@ public:
     if (!receive_can(&frame)) {
         return;
     }
-    // Serial.printf("The can id: %d\n", can_msg_id);
+    // Serial.printf("The can id: %d\n", frame.id);
     static_cast<Child*>(this)->handle_can_special(&frame);
   }
 

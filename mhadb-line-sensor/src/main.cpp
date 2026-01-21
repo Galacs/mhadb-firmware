@@ -51,7 +51,7 @@ public:
 
 CanController<MHADBCanController<LineCanHandler>> can;
 
-int sensors[] = {LS1, LS2, LS3, LS4, LS5, LS6, LS7, LS8, LS9 };
+int sensors[] = {LS0, LS1, LS2, LS3, LS4, LS5, LS6, LS7, LS8, LS9 };
 
 CRGB leds_A[5];
 CRGB leds_B[5];
@@ -59,8 +59,8 @@ CRGB leds_B[5];
 uint16_t line_sensors[10];
 
 int init_leds() {
-  FastLED.addLeds<WS2812B, PB12>(leds_A, 5);
-  FastLED.addLeds<WS2812B, PB13>(leds_B, 5);
+  FastLED.addLeds<WS2812B, PB12>(leds_A, 2);
+  // FastLED.addLeds<WS2812B, PB13>(leds_B, 5);
 }
 
 void update_leds(uint16_t*  values) {
@@ -108,11 +108,12 @@ void update_leds(uint16_t*  values) {
 void update_line_sensors(int* sensors, uint16_t*  values) {
   for (size_t i = 0; i < 10; i++) {
     // Devboard sensors
-    if (i == 3 /*|| i == 4*/ || i == 5) {
-      values[i] = analogRead(sensors[i]);
-    } else {
-      values[i] = 0;
-    }
+    values[i] = analogRead(sensors[i]);
+    // if (i == 3 /*|| i == 4*/ || i == 5) {
+    //   values[i] = analogRead(sensors[i]);
+    // } else {
+    //   values[i] = 0;
+    // }
   }
 }
 
@@ -125,10 +126,10 @@ void print_line_values(uint16_t* values) {
 }
 
 int16_t get_line_position(uint16_t* values) {
-  // TODO: Moyenne réduite
-  // const uint8_t weights[] = {4, 14, 24, 34, 44};
+  // TODO: Moyenne réduite ou cubique ou mieux
+  const uint8_t weights[] = {4, 14, 24, 34, 44};
   // Devboard
-  const uint8_t weights[] = {30, 30, 30, 30, 30};
+  // const uint8_t weights[] = {30, 30, 30, 30, 30};
   int32_t total_moy = 0;
   for (uint8_t i = 0; i < 10; i++) {
     // Serial.println(weights[i % 4] * values[i] * ((i < 4)? 1: -1));
@@ -149,7 +150,10 @@ void update_can(uint16_t* values) {
   t_line_sensor_data msg_content { .line_pos=get_line_position(values) };
   // Serial.printf("can to be line pos: %d\n", msg_content.line_pos);
   can.send_struct(msg_content);
-
+  for (size_t i = 0; i < 10; i++) {
+    t_line_sensor_raw_data data {.sensor_id=i, .value=values[i]};
+    can.send_struct(data);
+  }
 }
 
 // void read_can() {
@@ -171,6 +175,8 @@ void setup() {
   // Pins used for serial on devboard
   // pinMode(BTN1, INPUT_PULLUP);
   // pinMode(BTN2, INPUT_PULLUP);
+ 
+  // init_leds();
 
   HardwareTimer* can_timer = new HardwareTimer(TIM2);
   can_timer->setOverflow(120, HERTZ_FORMAT);
@@ -186,7 +192,7 @@ void setup() {
 void loop() {
   update_line_sensors(sensors, line_sensors);
   print_line_values(line_sensors);
-  update_leds(line_sensors);
+  // update_leds(line_sensors);
   // can.handle_can();
   delay(100);
   can.send_rtr(CAN_ID::BLDC_ALIGNMENT_RESULTS);

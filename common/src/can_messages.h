@@ -19,7 +19,7 @@ enum CAN_ID {
 };
 
 CAN_STRUCT(t_line_sensor_raw_data, CAN_ID::LINE_RAW_SENSOR_DATA,
-  uint8_t id;
+  uint8_t sensor_id;
   uint16_t value;
 );
 
