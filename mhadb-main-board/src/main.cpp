@@ -23,6 +23,10 @@ class MainCanHandler
     Serial.printf("direction: %d\n", data.sensor_direction);
   }
 
+  static void handle_struct(t_line_sensor_data data) {
+    Serial.printf("Line pos: %d\n", data.line_pos);
+  }
+
   template<typename T>
   static void handle_struct(T data) {};
   template<typename T>
@@ -34,7 +38,7 @@ CanController<MHADBCanController<MainCanHandler>> can;
 
 void setup() {
   Serial.begin(115200);
-  can.init((gpio_num_t)12, (gpio_num_t)14);
+  can.init((gpio_num_t)48, (gpio_num_t)34);
 
 }
 
@@ -43,6 +47,5 @@ void loop() {
   // can.send_struct(a);
   can.send_rtr(CAN_ID::LINE_RAW_SENSOR_DATA);
   can.handle_can();
-  delay(50);
-  Serial.println("alive");
+  delay(200);
 }

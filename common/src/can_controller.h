@@ -79,9 +79,9 @@ public:
 #ifdef ARDUINO_ARCH_ESP32
   CanController() {};
   void init(gpio_num_t rx, gpio_num_t tx) {
-    // twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT(tx, rx, TWAI_MODE_NORMAL);
-    twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT(tx, rx, TWAI_MODE_NO_ACK);
-    twai_timing_config_t t_config = TWAI_TIMING_CONFIG_500KBITS();
+    twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT(tx, rx, TWAI_MODE_NORMAL);
+    // twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT(tx, rx, TWAI_MODE_NO_ACK);
+    twai_timing_config_t t_config = TWAI_TIMING_CONFIG_100KBITS();
     twai_filter_config_t f_config = TWAI_FILTER_CONFIG_ACCEPT_ALL();
 
     // Install TWAI driver
@@ -105,10 +105,10 @@ public:
       twai_message_t message;
       message.identifier = frame.id;
       message.data_length_code = frame.len;
-      Serial.printf("data len: %d\n", frame.len);
+      // Serial.printf("data len: %d\n", frame.len);
       memcpy(&message.data, frame.buf, frame.len);
       if (twai_transmit(&message, pdMS_TO_TICKS(1000)) == ESP_OK) {
-          printf("Message queued for transmission\n");
+          // printf("Message queued for transmission\n");
       } else {
           printf("Failed to queue message for transmission\n");
       }
@@ -122,6 +122,9 @@ public:
           Serial.println("no can frames");
           return false;
       }
+      frame->rtr = message.rtr;
+      frame->len = message.data_length_code;
+      frame->id = message.identifier;
       memcpy(frame->buf, &message.data, message.data_length_code);
       return true;
   };
