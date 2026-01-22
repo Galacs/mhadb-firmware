@@ -34,7 +34,7 @@ class MainCanHandler
 
   static void handle_struct(t_line_sensor_raw_data data) {
     if (data.sensor_id == 9) {
-      print_line_values(line_sensors);
+      // print_line_values(line_sensors);
     }
     line_sensors[data.sensor_id] = data.value;
   }
@@ -63,5 +63,5 @@ void loop() {
   // can.send_struct(a);
   // can.send_rtr(CAN_ID::LINE_RAW_SENSOR_DATA);
   can.handle_can();
-  delay(20);
+  // delay(20);
 }

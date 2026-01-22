@@ -15,18 +15,21 @@
 #define SOB PA2
 #define SOC PA3
 
+#define SCL PB6
+#define SDA PB7
+
 #define Serial3 Serial
 
-float motor_target = 0;
+float motor_target = 5;
 
 //HardwareSerial Serial3(PB11, PB10);
 
 BLDCMotor motor = BLDCMotor(7);
-// BLDCDriver6PWM driver = BLDCDriver6PWM(INHA , INLA, INHB, INLB, INHC, INLC);
-BLDCDriver3PWM driver = BLDCDriver3PWM(INHA , INHB, INHC);
+BLDCDriver6PWM driver = BLDCDriver6PWM(INHA , INLA, INHB, INLB, INHC, INLC);
+// BLDCDriver3PWM driver = BLDCDriver3PWM(INHA , INHB, INHC);
 
 MagneticSensorI2C sensor = MagneticSensorI2C(AS5600_I2C);
-TwoWire Wire2(PB11, PB10);
+TwoWire Wire2(SDA, SCL);
 
 // Real time FOC
 HardwareTimer* timer = new HardwareTimer(TIM2);
@@ -35,18 +38,18 @@ class BldcCanHandler
 {
   public:
   static void handle_struct(t_line_sensor_data data) {
-    Serial.printf("Line pos: %d\n", data.line_pos);
+    // Serial.printf("Line pos: %d\n", data.line_pos);
     // Serial.println(sizeof(t_bldc_current_pos));
     motor_target = map(data.line_pos, -4000, 4000, -50, 50);
   }
 
   static void handle_struct(t_bldc_alignment_start data) {
     timer->pause();
-    Serial.println("aligning...");
+    // Serial.println("aligning...");
     motor.zero_electric_angle  = NOT_SET;
     motor.sensor_direction = Direction::UNKNOWN; // CW or CCW
     motor.initFOC();
-    Serial.println("aligned...");
+    // Serial.println("aligned...");
     timer->resume();
   }
 
@@ -55,8 +58,8 @@ class BldcCanHandler
     data->shaft_angle = motor.shaft_angle;
     // data->shaft_angle = 10.5;
     // Serial.printf("%f will be sent", data->shaft_angle);
-    Serial.println(data->shaft_angle);
-    Serial.println("received rtr");
+    // Serial.println(data->shaft_angle);
+    // Serial.println("received rtr");
     return true;
   }
   static bool update_struct(t_bldc_current_speed* data) {
@@ -91,20 +94,26 @@ struct __attribute__ ((packed)) t_motor_command   {
 };
 
 void setup() {
-  pinMode(PC13, OUTPUT);
+  // pinMode(PC13, OUTPUT);
 
-  pinMode(INLA, OUTPUT);
-  pinMode(INLB, OUTPUT);
-  pinMode(INLC, OUTPUT);
-  digitalWrite(INLA, HIGH);
-  digitalWrite(INLB, HIGH);
-  digitalWrite(INLC, HIGH);
+  // // pinMode(INLA, OUTPUT);
+  // // pinMode(INLB, OUTPUT);
+  // // pinMode(INLC, OUTPUT);
+  // // digitalWrite(INLA, HIGH);
+  // // digitalWrite(INLB, HIGH);
+  // // digitalWrite(INLC, HIGH);
 
-  Serial3.setRx(PB7);
-  Serial3.setTx(PB6);
-  Serial3.begin(115200);
+  // Serial3.setRx(PB7);
+  // Serial3.setTx(PB6);
+  // Serial3.begin(115200);
+  pinMode(PA15, OUTPUT);
+  t_bldc_current_pos data {.shaft_angle=10};
+  can.send_struct(data);
 
   can.init();
+
+  data.shaft_angle = 20;
+  can.send_struct(data);
 
   // SimpleFOC setup
   // SimpleFOCDebug::enable(&Serial3);
@@ -112,6 +121,18 @@ void setup() {
   // command.verbose = VerboseMode::machine_readable;
 
   sensor.init(&Wire2);
+  data.shaft_angle = 69;
+  can.send_struct(data);
+
+  // bool b = false;
+  // for (;;) {
+  //   b != b;
+  //   delay(100);
+  //   sensor.update();
+  //   digitalWrite(PA15, b);
+  //   data.shaft_angle = sensor.getAngle();
+  //   can.send_struct(data);
+  // }
 
 
   driver.voltage_power_supply = 3.6*3;
@@ -148,20 +169,24 @@ void setup() {
   // initialize motor
   motor.init();
   // align encoder and start FOC
-  motor.zero_electric_angle  = 4.36f; // rad
-  motor.sensor_direction = Direction::CCW; // CW or CCW
+  // motor.zero_electric_angle  = 4.36f; // rad
+  // motor.sensor_direction = Direction::CCW; // CW or CCW
   motor.voltage_sensor_align = 10.0f;
   motor.initFOC();
+
+  t_bldc_alignment_results results;
+  BldcCanHandler::update_struct(&results);
+  can.send_struct(results);
 
   // add target command M
   // command.add('M', doMotor, "motor");
 
-  Serial3.println(F("Motor ready."));
-  Serial3.println(F("Set the target velocity using Serial3 terminal:"));
+  // Serial3.println(F("Motor ready."));
+  // Serial3.println(F("Set the target velocity using Serial3 terminal:"));
   
   motor.target = 5; //initial target velocity 1 rad/s
-  Serial3.println("Target velocity: 1 rad/s");
-  Serial3.println("Voltage limit 2V");
+  // Serial3.println("Target velocity: 1 rad/s");
+  // Serial3.println("Voltage limit 2V");
 
   // Set timer frequency to 10kHz
   timer->setOverflow(1200, HERTZ_FORMAT); // MAX 1500
@@ -187,7 +212,7 @@ void setup() {
 }
 int i = 0;
 void loop() {
-  t_line_sensor_raw_data a {.id=10, .value=(int)motor.shaft_velocity};
+  t_line_sensor_raw_data a {.sensor_id=10, .value=(int)motor.shaft_velocity};
 
   // can.send_struct(a);
  

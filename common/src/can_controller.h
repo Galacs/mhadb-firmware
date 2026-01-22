@@ -58,7 +58,7 @@ public:
     // Serial.printf("data len: %d\n", data_len);
     memcpy(&tx_msg.buf, frame.buf, frame.len);
     if (m_stm32CAN.write(tx_msg)) {
-        // Serial.println("can sent");
+      // Serial.println("can sent");
     };
   };
 
@@ -119,7 +119,7 @@ public:
       //twai_read_alerts(&alerts_triggered, 0);
       twai_message_t message;
       if (twai_receive(&message, 0) == ESP_ERR_TIMEOUT) {
-          Serial.println("no can frames");
+          // Serial.println("no can frames");
           return false;
       }
       frame->rtr = message.rtr;
