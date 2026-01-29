@@ -100,6 +100,7 @@ class BldcCanHandler
   template<typename T>
   static bool update_struct(T* data) {return false;};
 };
+MHADBCanController<BldcCanHandler>* BldcCanHandler::controller = nullptr;
 
 CanController<MHADBCanController<BldcCanHandler>> can;
 

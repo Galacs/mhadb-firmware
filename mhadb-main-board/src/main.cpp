@@ -12,12 +12,42 @@ void print_line_values(uint16_t* values) {
      Serial.println("");
 }
 
+// Temp settings
+Preferences prefs;
+float motor_left_zero;
+int8_t motor_left_direction;
+float motor_right_zero;
+int8_t motor_right_direction;
+
+void init_settings() {
+  prefs.begin("mainPrefs");
+  bool tpInit = prefs.isKey("nvsInit");
+  if (tpInit == false) {
+    prefs.putFloat("motorLeftZero", 0);
+    prefs.putFloat("motorRightZero", 0);
+
+    prefs.putChar("motorLeftDirection", 0);
+    prefs.putChar("motorRightDirection", 0);
+
+    prefs.putBool("nvsInit", true);
+  }
+}
+
+void load_settings() {
+  motor_left_zero = prefs.getFloat("motorLeftZero");
+  motor_right_zero = prefs.getFloat("motorRightZero");
+
+  motor_left_direction = prefs.getChar("motorLeftDirection");
+  motor_right_direction = prefs.getChar("motorRightDirection");
+}
 class MainCanHandler
 {
   public:
-  MHADBCanController<MainCanHandler>* controller; 
+  static MHADBCanController<MainCanHandler>* controller; 
   
-  MainCanHandler(MHADBCanController<MainCanHandler>* ctrl) : controller(ctrl) {}
+  static void setController(MHADBCanController<MainCanHandler>* ctrl) {
+    controller = ctrl;
+  }
 
   static void handle_struct(t_bldc_current_pos data) {
     // Serial.printf("Line pos: %d\n", data.shaft_angle);
@@ -52,7 +82,7 @@ class MainCanHandler
     right.motor_id = right.RIGHT;
     right.zero_electric_angle = motor_right_zero;
     right.sensor_direction = motor_right_direction;
-    can.send_struct(right);
+    controller->send_struct(right);
 
     data->align_request = data->STORED;
     data->motor_id = data->RIGHT;
@@ -78,35 +108,9 @@ class MainCanHandler
   static bool update_struct(T* data) {return false;};
 };
 
+MHADBCanController<MainCanHandler>* MainCanHandler::controller = nullptr;
 
-// Temp settings
-Preferences prefs;
-float motor_left_zero;
-int8_t motor_left_direction;
-float motor_right_zero;
-int8_t motor_right_direction;
 
-void init_settings() {
-  prefs.begin("mainPrefs");
-  bool tpInit = prefs.isKey("nvsInit");
-  if (tpInit == false) {
-    prefs.putFloat("motorLeftZero", 0);
-    prefs.putFloat("motorRightZero", 0);
-
-    prefs.putChar("motorLeftDirection", 0);
-    prefs.putChar("motorRightDirection", 0);
-
-    prefs.putBool("nvsInit", true);
-  }
-}
-
-void load_settings() {
-  motor_left_zero = prefs.getFloat("motorLeftZero");
-  motor_right_zero = prefs.getFloat("motorRightZero");
-
-  motor_left_direction = prefs.getChar("motorLeftDirection");
-  motor_right_direction = prefs.getChar("motorRightDirection");
-}
 
 CanController<MHADBCanController<MainCanHandler>> can;
 
