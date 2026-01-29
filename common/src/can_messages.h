@@ -15,7 +15,7 @@ enum CAN_ID {
   BLDC_ALIGNMENT_START = 0x60,
   BLDC_CURRENT_POS = 0x70,
   BLDC_CURRENT_SPEED = 0x80,
-  BLDC_ALIGNMENT_RESULTS = 0x90,
+  BLDC_ALIGNMENT_SETTINGS = 0x90,
 };
 
 CAN_STRUCT(t_line_sensor_raw_data, CAN_ID::LINE_RAW_SENSOR_DATA,
@@ -50,11 +50,15 @@ CAN_STRUCT(t_bldc_alignment_start, CAN_ID::BLDC_ALIGNMENT_START,
   } motor_id;
 );
 
-CAN_STRUCT(t_bldc_alignment_results, CAN_ID::BLDC_ALIGNMENT_RESULTS,
+CAN_STRUCT(t_bldc_alignment_settings, CAN_ID::BLDC_ALIGNMENT_SETTINGS,
   enum motor_id_t: int8_t {
     RIGHT,
     LEFT,
   } motor_id;
+  enum align_request_t: int8_t {
+    STORED,
+    CALIBRATED,
+  } align_request;
   float zero_electric_angle;
   int8_t sensor_direction;
 );
@@ -62,6 +66,12 @@ CAN_STRUCT(t_bldc_alignment_results, CAN_ID::BLDC_ALIGNMENT_RESULTS,
 template <typename handler_t>
 class MHADBCanController : public CanController<MHADBCanController<handler_t>> {
 public:
+  handler_t handler;
+  MHADBCanController() {
+    // Set the static controller reference
+    handler_t::setController(this);
+  }
+
   void handle_can_special(t_can_frame *frame) {
     switch (frame->id) {
       HANDLE_MSG(handler_t, t_line_sensor_raw_data);
@@ -69,7 +79,7 @@ public:
       HANDLE_MSG(handler_t, t_bldc_current_pos);
       HANDLE_MSG(handler_t, t_bldc_current_speed);
       HANDLE_MSG(handler_t, t_bldc_alignment_start);
-      HANDLE_MSG(handler_t, t_bldc_alignment_results);
+      HANDLE_MSG(handler_t, t_bldc_alignment_settings);
     }
   };
 };

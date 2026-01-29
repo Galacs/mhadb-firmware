@@ -18,7 +18,8 @@
 #define SCL PB6
 #define SDA PB7
 
-#define Serial3 Serial
+#define LEFT
+// #define RIGHT
 
 float motor_target = 5;
 
@@ -37,6 +38,12 @@ HardwareTimer* timer = new HardwareTimer(TIM2);
 class BldcCanHandler
 {
   public:
+  static MHADBCanController<BldcCanHandler>* controller; 
+  
+  static void setController(MHADBCanController<BldcCanHandler>* ctrl) {
+    controller = ctrl;
+  }
+
   static void handle_struct(t_line_sensor_data data) {
     // Serial.printf("Line pos: %d\n", data.line_pos);
     // Serial.println(sizeof(t_bldc_current_pos));
@@ -49,6 +56,19 @@ class BldcCanHandler
     motor.zero_electric_angle  = NOT_SET;
     motor.sensor_direction = Direction::UNKNOWN; // CW or CCW
     motor.initFOC();
+
+    t_bldc_alignment_settings settings_msg;
+    settings_msg.align_request = settings_msg.CALIBRATED;
+    #ifdef RIGHT
+    settings_msg.motor_id = settings_msg.RIGHT;    
+    #endif
+    #ifdef LEFT
+    // settings_msg.motor_id = settings_msg.LEFT;
+    #endif
+    settings_msg.zero_electric_angle = motor.zero_electric_angle;
+    settings_msg.sensor_direction = motor.sensor_direction;
+    controller->send_struct(settings_msg);
+
     // Serial.println("aligned...");
     timer->resume();
   }
@@ -68,12 +88,12 @@ class BldcCanHandler
     return true;
   }
 
-  static bool update_struct(t_bldc_alignment_results* data) {
-    data->motor_id = data->RIGHT;
-    data->zero_electric_angle = motor.zero_electric_angle;
-    data->sensor_direction = motor.sensor_direction;
-    return true;
-  }
+  // static bool update_struct(t_bldc_alignment_settings* data) {
+  //   data->motor_id = data->RIGHT;
+  //   data->zero_electric_angle = motor.zero_electric_angle;
+  //   data->sensor_direction = motor.sensor_direction;
+  //   return true;
+  // }
 
   template<typename T>
   static void handle_struct(T data) {};
@@ -174,7 +194,7 @@ void setup() {
   motor.voltage_sensor_align = 10.0f;
   motor.initFOC();
 
-  t_bldc_alignment_results results;
+  t_bldc_alignment_settings results;
   BldcCanHandler::update_struct(&results);
   can.send_struct(results);
 
