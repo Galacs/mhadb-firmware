@@ -14,10 +14,10 @@ void print_line_values(uint16_t* values) {
 
 // Temp settings
 Preferences prefs;
-float motor_left_zero;
-int8_t motor_left_direction;
-float motor_right_zero;
-int8_t motor_right_direction;
+float p_motor_left_zero;
+int8_t p_motor_left_direction;
+float p_motor_right_zero;
+int8_t p_motor_right_direction;
 
 void init_settings() {
   prefs.begin("mainPrefs");
@@ -34,12 +34,13 @@ void init_settings() {
 }
 
 void load_settings() {
-  motor_left_zero = prefs.getFloat("motorLeftZero");
-  motor_right_zero = prefs.getFloat("motorRightZero");
+  p_motor_left_zero = prefs.getFloat("motorLeftZero");
+  p_motor_right_zero = prefs.getFloat("motorRightZero");
 
-  motor_left_direction = prefs.getChar("motorLeftDirection");
-  motor_right_direction = prefs.getChar("motorRightDirection");
+  p_motor_left_direction = prefs.getChar("motorLeftDirection");
+  p_motor_right_direction = prefs.getChar("motorRightDirection");
 }
+
 class MainCanHandler
 {
   public:
@@ -66,12 +67,14 @@ class MainCanHandler
     Serial.println(data.zero_electric_angle);
     Serial.printf("direction: %d\n", data.sensor_direction);
 
+    if (data.align_request != data.CALIBRATED)
+      return;
     if (data.motor_id == data.LEFT) {
-      prefs.putFloat("motorLeftZero", 0);
-      prefs.putChar("motorLeftDirection", 0);
+      prefs.putFloat("motorLeftZero", data.zero_electric_angle);
+      prefs.putChar("motorLeftDirection", data.sensor_direction);
     } else {
-      prefs.putFloat("motorRightZero", 0);
-      prefs.putChar("motorRightDirection", 0);
+      prefs.putFloat("motorRightZero", data.zero_electric_angle);
+      prefs.putChar("motorRightDirection", data.sensor_direction);
     }
     load_settings();
   }
@@ -80,14 +83,14 @@ class MainCanHandler
     t_bldc_alignment_settings right;
     right.align_request = right.STORED;
     right.motor_id = right.RIGHT;
-    right.zero_electric_angle = motor_right_zero;
-    right.sensor_direction = motor_right_direction;
+    right.zero_electric_angle = p_motor_right_zero;
+    right.sensor_direction = p_motor_right_direction;
     controller->send_struct(right);
 
     data->align_request = data->STORED;
     data->motor_id = data->RIGHT;
-    data->zero_electric_angle = motor_left_zero;
-    data->sensor_direction = motor_left_direction;
+    data->zero_electric_angle = p_motor_left_zero;
+    data->sensor_direction = p_motor_left_direction;
     return true;
   }
 
