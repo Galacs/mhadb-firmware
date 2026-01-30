@@ -19,6 +19,11 @@ enum CAN_ID {
   BLDC_SET_SPEED = 0xA0,
 };
 
+enum motor_id_t: int8_t {
+  RIGHT,
+  LEFT,
+};
+
 CAN_STRUCT(t_line_sensor_raw_data, CAN_ID::LINE_RAW_SENSOR_DATA,
   uint8_t sensor_id;
   uint16_t value;
@@ -29,33 +34,21 @@ CAN_STRUCT(t_line_sensor_data, CAN_ID::LINE_SENSOR_DATA,
 );
 
 CAN_STRUCT(t_bldc_current_pos, CAN_ID::BLDC_CURRENT_POS,
-  enum motor_id_t: int8_t {
-    RIGHT,
-    LEFT,
-  } motor_id;
+  motor_id_t motor_id;
   float shaft_angle;
 );
 
 CAN_STRUCT(t_bldc_current_speed, CAN_ID::BLDC_CURRENT_SPEED,
-  enum motor_id_t: int8_t {
-    RIGHT,
-    LEFT,
-  } motor_id;
+  motor_id_t motor_id;
   float speed;
 );
 
 CAN_STRUCT(t_bldc_alignment_start, CAN_ID::BLDC_ALIGNMENT_START,
-  enum motor_id_t: int8_t {
-    RIGHT,
-    LEFT,
-  } motor_id;
+  motor_id_t motor_id;
 );
 
 CAN_STRUCT(t_bldc_alignment_settings, CAN_ID::BLDC_ALIGNMENT_SETTINGS,
-  enum motor_id_t: int8_t {
-    RIGHT,
-    LEFT,
-  } motor_id;
+  motor_id_t motor_id;
   enum align_request_t: int8_t {
     STORED,
     CALIBRATED,
@@ -65,10 +58,7 @@ CAN_STRUCT(t_bldc_alignment_settings, CAN_ID::BLDC_ALIGNMENT_SETTINGS,
 );
 
 CAN_STRUCT(t_bldc_set_speed, CAN_ID::BLDC_SET_SPEED,
-  enum motor_id_t: int8_t {
-    RIGHT,
-    LEFT,
-  } motor_id;
+  motor_id_t motor_id;
   float speed;
 );
 

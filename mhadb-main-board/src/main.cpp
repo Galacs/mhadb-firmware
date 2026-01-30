@@ -41,6 +41,16 @@ void load_settings() {
   p_motor_right_direction = prefs.getChar("motorRightDirection");
 }
 
+// Temp test function
+void forward(float speed) {
+  t_bldc_set_speed data;
+  data.motor_id = data.LEFT;
+  data.speed = speed;
+  can.send_struct(data);
+  data.motor_id = data.RIGHT;
+  can.send_struct(data);
+}
+
 class MainCanHandler
 {
   public:
@@ -126,10 +136,18 @@ void setup() {
 
 }
 
+bool done = false;
+
 void loop() {
   // t_line_sensor_raw_data a {.id=10, .value=126};
   // can.send_struct(a);
   // can.send_rtr(CAN_ID::LINE_RAW_SENSOR_DATA);
   can.handle_can();
+  if (millis() > 1000 && !done) {
+    done = true;
+    forward(10.0);
+    delay(300);
+    forward(0);
+  }
   // delay(20);
 }
