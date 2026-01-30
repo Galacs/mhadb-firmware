@@ -126,6 +126,8 @@ void print_line_values(uint16_t* values) {
 }
 
 int16_t get_line_position(uint16_t* values) {
+  // fonction 1 rémi
+  #if 0
   // TODO: Moyenne réduite ou cubique ou mieux
   const uint8_t weights[] = {4, 14, 24, 34, 44};
   // Devboard
@@ -140,6 +142,54 @@ int16_t get_line_position(uint16_t* values) {
   // Devboard
   // return total_moy/(120);
   return total_moy;
+  #endif
+  // fonction 1 victor
+  #if 0
+  double coef = 0.95;
+  int max=0, k=0, sum=0; 
+  int tab[10]={0}; 
+
+  for (int i=0; i<10; i++) {
+    if (values[i] > max) max=values[i];
+  }
+  for (int j=0;j<10;j++) {
+    if (values[j] > max*coef){
+      tab[k] = j;
+      //sum += values[j];
+      sum += j;
+      k++;
+    }
+  }
+  return (sum/k);
+  #endif
+
+  int tab[20]={0};
+  int max=0, sum=0, calc, moy_val, moy_pos, count=0;
+  for(int i=0; i<20; i++){
+    if (i%2==0){
+      calc=values[i/2];
+      tab[i]=calc;
+      sum+=calc;
+      if (calc > max) max=calc;
+    }
+    else {
+      calc=int(values[((i-1)/2)]+values[((i+1)/2)]);
+      tab[i]=calc;
+      sum+=calc;
+      if (calc > max) max=calc;
+    }
+  }
+  moy_val=int(sum/20);
+  for(int j=0; j<20; j++){
+    if (tab[j]<=moy_val) tab[j]=0;
+    else tab[j]=1;
+  }
+  for (int k=2;k<20;k++){
+    //if( (tab[k])&& ((tab[k+1]) && (tab[k+2])  ||  (tab[k-1] && tab[k-2]) || (tab[k-1] && tab[k+1])) ) continue;
+    if( (tab[k])&& ((tab[k+1]) && (tab[k+2])  ||  (tab[k-1] && tab[k-2]) || (tab[k-1] && tab[k+1])) ) continue;
+    else tab[k]=0;
+  }
+
 }
 
 void update_can(uint16_t* values) {
@@ -176,12 +226,12 @@ void setup() {
   can.send_struct(align_msg);
   
   init_leds();
-  digitalWrite(PA15, HIGH);
+  //digitalWrite(PA15, HIGH);
   leds_A[0] = CRGB::Red4;
   FastLED.setBrightness(20);
   FastLED.show();
 
-  digitalWrite(PA15, HIGH);
+  //digitalWrite(PA15, HIGH);
   // Pins used for serial on devboard
   // pinMode(BTN1, INPUT_PULLUP);
   // pinMode(BTN2, INPUT_PULLUP);
