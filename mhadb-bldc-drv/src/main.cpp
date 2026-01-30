@@ -35,6 +35,15 @@ TwoWire Wire2(SDA, SCL);
 // Real time FOC
 HardwareTimer* timer = new HardwareTimer(TIM2);
 
+
+enum bldc_state_t: uint8_t {
+  RESET,
+  CALIBRATING,
+  RUNNING,
+  EMG,
+};
+
+bldc_state_t state = RESET;
 class BldcCanHandler
 {
   public:
@@ -47,15 +56,18 @@ class BldcCanHandler
   static void handle_struct(t_line_sensor_data data) {
     // Serial.printf("Line pos: %d\n", data.line_pos);
     // Serial.println(sizeof(t_bldc_current_pos));
-    motor_target = map(data.line_pos, -4000, 4000, -50, 50);
+    //motor_target = map(data.line_pos, -4000, 4000, -50, 50);
   }
 
   static void handle_struct(t_bldc_alignment_start data) {
     timer->pause();
+    state = CALIBRATING;
     // Serial.println("aligning...");
     motor.zero_electric_angle  = NOT_SET;
     motor.sensor_direction = Direction::UNKNOWN; // CW or CCW
+    motor_target = 0;
     motor.initFOC();
+    state = RUNNING;
 
     t_bldc_alignment_settings settings_msg;
     settings_msg.align_request = settings_msg.CALIBRATED;
@@ -193,7 +205,10 @@ void setup() {
   // motor.zero_electric_angle  = 4.36f; // rad
   // motor.sensor_direction = Direction::CCW; // CW or CCW
   motor.voltage_sensor_align = 10.0f;
+
+  state = CALIBRATING;
   motor.initFOC();
+  state = RUNNING;
 
   t_bldc_alignment_settings results;
   BldcCanHandler::update_struct(&results);
