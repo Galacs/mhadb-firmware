@@ -37,7 +37,7 @@ public:
     Serial.println(data.speed);
   }
 
-  static void handle_struct(t_bldc_alignment_results data) {
+  static void handle_struct(t_bldc_alignment_settings data) {
     // Serial.print("zero angle: ");
     // Serial.println(data.zero_electric_angle);
     // Serial.printf("direction: %d\n", data.sensor_direction);
@@ -53,13 +53,13 @@ CanController<MHADBCanController<LineCanHandler>> can;
 
 int sensors[] = {LS0, LS1, LS2, LS3, LS4, LS5, LS6, LS7, LS8, LS9 };
 
-CRGB leds_A[5];
+CRGB leds_A[1];
 CRGB leds_B[5];
 
 uint16_t line_sensors[10];
 
-int init_leds() {
-  FastLED.addLeds<WS2812B, PB12>(leds_A, 2);
+void init_leds() {
+  FastLED.addLeds<WS2812B, PB13, GRB>(leds_A, 1);
   // FastLED.addLeds<WS2812B, PB13>(leds_B, 5);
 }
 
@@ -164,6 +164,9 @@ void setup() {
   Serial.setTx(PB6);
   Serial.begin(115200);
 
+  pinMode(PA15, OUTPUT);
+  digitalWrite(PA15, LOW);
+
   can.init();
   // delay(1000);
   Serial.println("salut rhey");
@@ -171,7 +174,14 @@ void setup() {
   can.send_rtr(CAN_ID::BLDC_CURRENT_SPEED);
   t_bldc_alignment_start align_msg = {.motor_id=t_bldc_alignment_start::LEFT};
   can.send_struct(align_msg);
+  
+  init_leds();
+  digitalWrite(PA15, HIGH);
+  leds_A[0] = CRGB::Red4;
+  FastLED.setBrightness(20);
+  FastLED.show();
 
+  digitalWrite(PA15, HIGH);
   // Pins used for serial on devboard
   // pinMode(BTN1, INPUT_PULLUP);
   // pinMode(BTN2, INPUT_PULLUP);
@@ -195,5 +205,5 @@ void loop() {
   // update_leds(line_sensors);
   // can.handle_can();
   delay(100);
-  can.send_rtr(CAN_ID::BLDC_ALIGNMENT_RESULTS);
+  // can.send_rtr(CAN_ID::BLDC_ALIGNMENT_RESULTS);
 }
