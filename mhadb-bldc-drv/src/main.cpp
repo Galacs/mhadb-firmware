@@ -59,6 +59,23 @@ class BldcCanHandler
     //motor_target = map(data.line_pos, -4000, 4000, -50, 50);
   }
 
+  static void handle_struct(t_bldc_set_speed data) {
+    // Serial.printf("Line pos: %d\n", data.line_pos);
+    // Serial.println(sizeof(t_bldc_current_pos));
+    //motor_target = map(data.line_pos, -4000, 4000, -50, 50);
+
+    #ifdef RIGHT
+    if (data.motor_id == data.RIGHT) {
+    #endif
+    #ifdef LEFT
+    if (data.motor_id == data.LEFT) {
+    #endif
+      if (state == RUNNING) {
+        motor_target = data.speed;
+      }
+    }
+  }
+
   static void handle_struct(t_bldc_alignment_start data) {
     timer->pause();
     state = CALIBRATING;
