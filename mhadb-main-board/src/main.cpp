@@ -4,6 +4,14 @@
 
 uint16_t line_sensors[10] = {0};
 
+enum bldc_main_t: uint8_t {
+  RESET,
+  INITIALIZING,
+  ARMED,
+  FOLLOWING,
+  EMG,
+};
+
 void print_line_values(uint16_t* values) {
      for (size_t i = 0; i < 10; i++) {
         Serial.print(values[i]);
