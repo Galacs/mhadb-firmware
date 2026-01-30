@@ -16,6 +16,7 @@ enum CAN_ID {
   BLDC_CURRENT_POS = 0x70,
   BLDC_CURRENT_SPEED = 0x80,
   BLDC_ALIGNMENT_SETTINGS = 0x90,
+  BLDC_SET_SPEED = 0xA0,
 };
 
 CAN_STRUCT(t_line_sensor_raw_data, CAN_ID::LINE_RAW_SENSOR_DATA,
@@ -63,6 +64,14 @@ CAN_STRUCT(t_bldc_alignment_settings, CAN_ID::BLDC_ALIGNMENT_SETTINGS,
   int8_t sensor_direction;
 );
 
+CAN_STRUCT(t_bldc_set_speed, CAN_ID::BLDC_SET_SPEED,
+  enum motor_id_t: int8_t {
+    RIGHT,
+    LEFT,
+  } motor_id;
+  float speed;
+);
+
 template <typename handler_t>
 class MHADBCanController : public CanController<MHADBCanController<handler_t>> {
 public:
@@ -80,6 +89,7 @@ public:
       HANDLE_MSG(handler_t, t_bldc_current_speed);
       HANDLE_MSG(handler_t, t_bldc_alignment_start);
       HANDLE_MSG(handler_t, t_bldc_alignment_settings);
+      HANDLE_MSG(handler_t, t_bldc_set_speed);
     }
   };
 };
