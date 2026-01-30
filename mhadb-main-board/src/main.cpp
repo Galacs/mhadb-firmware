@@ -49,16 +49,6 @@ void load_settings() {
   p_motor_right_direction = prefs.getChar("motorRightDirection");
 }
 
-// Temp test function
-void forward(float speed) {
-  t_bldc_set_speed data;
-  data.motor_id = data.LEFT;
-  data.speed = speed;
-  can.send_struct(data);
-  data.motor_id = data.RIGHT;
-  can.send_struct(data);
-}
-
 class MainCanHandler
 {
   public:
@@ -87,7 +77,7 @@ class MainCanHandler
 
     if (data.align_request != data.CALIBRATED)
       return;
-    if (data.motor_id == data.LEFT) {
+    if (data.motor_id == motor_id_t::LEFT) {
       prefs.putFloat("motorLeftZero", data.zero_electric_angle);
       prefs.putChar("motorLeftDirection", data.sensor_direction);
     } else {
@@ -100,13 +90,13 @@ class MainCanHandler
   static bool update_struct(t_bldc_alignment_settings *data) {
     t_bldc_alignment_settings right;
     right.align_request = right.STORED;
-    right.motor_id = right.RIGHT;
+    right.motor_id = motor_id_t::RIGHT;
     right.zero_electric_angle = p_motor_right_zero;
     right.sensor_direction = p_motor_right_direction;
     controller->send_struct(right);
 
     data->align_request = data->STORED;
-    data->motor_id = data->RIGHT;
+    data->motor_id = motor_id_t::RIGHT;
     data->zero_electric_angle = p_motor_left_zero;
     data->sensor_direction = p_motor_left_direction;
     return true;
@@ -114,12 +104,12 @@ class MainCanHandler
 
   static void handle_struct(t_line_sensor_raw_data data) {
     if (data.sensor_id == 9) {
-      print_line_values(line_sensors);
+      // print_line_values(line_sensors);
     }
     line_sensors[data.sensor_id] = data.value;
   }
   static void handle_struct(t_line_sensor_data data) {
-    Serial.printf("Line pos: %d\n", data.line_pos);
+    // Serial.printf("Line pos: %d\n", data.line_pos);
   }
   
 
@@ -130,10 +120,17 @@ class MainCanHandler
 };
 
 MHADBCanController<MainCanHandler>* MainCanHandler::controller = nullptr;
-
-
-
 CanController<MHADBCanController<MainCanHandler>> can;
+
+// Temp test function
+void forward(float speed) {
+  t_bldc_set_speed data;
+  data.motor_id = motor_id_t::LEFT;
+  data.speed = speed;
+  can.send_struct(data);
+  data.motor_id = motor_id_t::RIGHT;
+  can.send_struct(data);
+}
 
 void setup() {
   Serial.begin(115200);
@@ -151,11 +148,12 @@ void loop() {
   // can.send_struct(a);
   // can.send_rtr(CAN_ID::LINE_RAW_SENSOR_DATA);
   can.handle_can();
-  if (millis() > 1000 && !done) {
+  if (millis() > 10000 && !done) {
     done = true;
-    forward(10.0);
-    delay(300);
-    forward(0);
+    forward(5.0);
+    Serial.println("gooo");
+    delay(5000);
+    forward(0.0);
   }
   // delay(20);
 }
