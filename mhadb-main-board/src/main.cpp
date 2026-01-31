@@ -2,6 +2,14 @@
 #include "can_messages.h"
 #include <Preferences.h>
 #include <Commander.h>
+#include <QuickPID.h>
+
+
+float Setpoint, Input, Output;
+
+float Kp = 2, Ki = 1, Kd = 0;
+
+QuickPID myPID(&Input, &Output, &Setpoint);
 
 uint16_t line_sensors[10] = {0};
 
@@ -12,6 +20,8 @@ enum bldc_main_t: uint8_t {
   FOLLOWING,
   EMG,
 };
+
+bldc_main_t state = RESET;
 
 void print_line_values(uint16_t* values) {
      for (size_t i = 0; i < 10; i++) {
@@ -29,6 +39,8 @@ float p_motor_left_zero;
 int8_t p_motor_left_direction;
 float p_motor_right_zero;
 int8_t p_motor_right_direction;
+
+int16_t line = 0;
 
 void init_settings() {
   prefs.begin("mainPrefs");
@@ -109,12 +121,13 @@ class MainCanHandler
 
   static void handle_struct(t_line_sensor_raw_data data) {
     if (data.sensor_id == 9) {
-      // print_line_values(line_sensors);
+      print_line_values(line_sensors);
     }
     line_sensors[data.sensor_id] = data.value;
   }
   static void handle_struct(t_line_sensor_data data) {
-    // Serial.printf("Line pos: %d\n", data.line_pos);
+    //Serial.printf("Line pos: %d\n", data.line_pos);
+    line = data.line_pos;
   }
   
 
@@ -135,6 +148,20 @@ void doStartAlign(char *cmd) {
   msg.motor_id = motor_id_t::LEFT; // not used by bldc 
   can.send_struct(msg);
   // can.send_rtr(BLDC_ALIGNMENT_SETTINGS);
+}
+
+void doFollow(char *cmd) {
+  if (state == FOLLOWING) {
+    Serial.println("now stop....");
+    state = RESET;
+    //turn the PID on
+    //myPID.SetMode(myPID.Control::manual);
+  } else {
+    Serial.println("now following....");
+    state = FOLLOWING;
+    //turn the PID on
+    //myPID.SetMode(myPID.Control::automatic);
+  }
 }
 
 void doSendAlign(char *cmd) {
@@ -189,6 +216,25 @@ void commetuveux(float speed, float direction){
     can.send_struct(data);
 }
 
+void following() {
+  if (state == FOLLOWING) {
+    Serial.println(line);
+    if (line > 50) {
+      direction = 0.4;
+    } else if (line < -50) {
+      direction = -0.4;
+    } else {
+      direction = 0;
+    }
+    commetuveux(speed, direction);
+  }
+ /*if (state == FOLLOWING) {
+  //Input = line;
+  Input = 5;
+  Serial.printf("line: %d, sortie: %d\n", line, Output);
+ }*/
+}
+
 void doSpeed(char *cmd) {
   command.scalar(&speed, cmd);
   commetuveux(speed, direction);
@@ -203,6 +249,8 @@ void setup() {
   Serial.begin(115200);
   // can.init((gpio_num_t)48, (gpio_num_t)34);
   can.init((gpio_num_t)10, (gpio_num_t)9);
+
+  Setpoint = 0;
   
   // Commander
   command.add('A', doStartAlign);
@@ -210,15 +258,28 @@ void setup() {
   command.add('F', doSendForward);
   command.add('S', doSpeed);
   command.add('D', doDirection);
+  command.add('L', doFollow);
+  
 
   init_settings();
   load_settings();
 
+  myPID.SetTunings(Kp, Ki, Kd);
+  myPID.SetMode(myPID.Control::automatic);
 }
 
 bool done = false;
 
+int last_run = 0;
+
 void loop() {
+  if (millis() > last_run + 50) {
+    last_run = millis();
+    following();
+  }
+  //Serial.println(state);
+  myPID.Compute();
+
   // t_line_sensor_raw_data a {.id=10, .value=126};
   // can.send_struct(a);
   // can.send_rtr(CAN_ID::LINE_RAW_SENSOR_DATA);
