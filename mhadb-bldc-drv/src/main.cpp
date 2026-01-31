@@ -18,10 +18,10 @@
 #define SCL PB6
 #define SDA PB7
 
-#define bldc_LEFT
-// #define bldc_RIGHT
+// #define bldc_LEFT
+#define bldc_RIGHT
 
-float motor_target = 5;
+float motor_target = 0;
 
 //HardwareSerial Serial3(PB11, PB10);
 
@@ -68,6 +68,26 @@ class BldcCanHandler
     }
   }
 
+  static void handle_struct(t_bldc_alignment_settings data) {
+    motor_id_t side;
+    #ifdef bldc_RIGHT
+    side = motor_id_t::RIGHT;
+    #endif
+    #ifdef bldc_LEFT
+    side = motor_id_t::LEFT;
+    #endif
+    if (data.motor_id == side && data.align_request == data.STORED) {
+      digitalWrite(PA15, HIGH);
+      timer->pause();
+      motor.zero_electric_angle  = data.zero_electric_angle;
+      motor.sensor_direction = (Direction)data.sensor_direction;
+      motor_target = 0;
+      motor.initFOC();
+      state = bldc_state_t::RUNNING;
+      timer->resume();
+    }
+  }
+
   static void handle_struct(t_bldc_alignment_start data) {
     timer->pause();
     state = bldc_state_t::CALIBRATING;
@@ -80,16 +100,17 @@ class BldcCanHandler
 
     t_bldc_alignment_settings settings_msg;
     settings_msg.align_request = settings_msg.CALIBRATED;
-    #ifdef RIGHT
-    settings_msg.motor_id = settings_msg.RIGHT;
+    motor_id_t side;
+    #ifdef bldc_RIGHT
+    side = motor_id_t::RIGHT;
     #endif
-    #ifdef LEFT
-    settings_msg.motor_id = (settings_msg.LEFT);
+    #ifdef bldc_LEFT
+    side = motor_id_t::LEFT;
     #endif
+    settings_msg.motor_id = side;
     settings_msg.zero_electric_angle = motor.zero_electric_angle;
     settings_msg.sensor_direction = motor.sensor_direction;
     controller->send_struct(settings_msg);
-
     // Serial.println("aligned...");
     timer->resume();
   }
@@ -110,6 +131,7 @@ class BldcCanHandler
   }
 
   static bool update_struct(t_bldc_alignment_settings* data) {
+    // digitalWrite(PA15, HIGH);
     motor_id_t side;
     #ifdef bldc_RIGHT
     side = motor_id_t::RIGHT;
@@ -129,7 +151,7 @@ class BldcCanHandler
 };
 
 MHADBCanController<BldcCanHandler>* BldcCanHandler::controller = nullptr;
-CanController<MHADBCanController<BldcCanHandler>> can;
+MHADBCanController<BldcCanHandler> can = MHADBCanController<BldcCanHandler>();
 
 bool a = true;
 
@@ -141,6 +163,7 @@ struct __attribute__ ((packed)) t_motor_command   {
 void setup() {
   // Serial.begin(115200);
   pinMode(PA15, OUTPUT);
+  digitalWrite(PA15, LOW);
   t_bldc_current_pos data {.shaft_angle=10};
   can.send_struct(data);
 
@@ -185,15 +208,15 @@ void setup() {
   // motor.sensor_direction = Direction::CCW; // CW or CCW
   motor.voltage_sensor_align = 10.0f;
 
-  state = bldc_state_t::CALIBRATING;
-  motor.initFOC();
-  state = bldc_state_t::RUNNING;
+  // state = bldc_state_t::CALIBRATING;
+  // motor.initFOC();
+  // state = bldc_state_t::RUNNING;
 
-  t_bldc_alignment_settings results;
-  BldcCanHandler::update_struct(&results);
-  can.send_struct(results);
+  // t_bldc_alignment_settings results;
+  // BldcCanHandler::update_struct(&results);
+  // can.send_struct(results);
 
-  motor.target = 5; //initial target velocity 1 rad/s
+  motor.target = 0; //initial target velocity 1 rad/s
 
   // Set timer frequency to 10kHz
   timer->setOverflow(1200, HERTZ_FORMAT); // MAX 1500
@@ -207,7 +230,7 @@ void setup() {
     motor.move(motor_target);
   });
   // start the timer
-  timer->resume();
+  // timer->resume();
 
   HardwareTimer* can_timer = new HardwareTimer(TIM3);
   can_timer->setOverflow(120, HERTZ_FORMAT);
@@ -216,6 +239,7 @@ void setup() {
   });
   // start the timer
   can_timer->resume();
+  can.send_rtr(BLDC_ALIGNMENT_SETTINGS);
 }
 int i = 0;
 void loop() {
@@ -224,7 +248,11 @@ void loop() {
   // can.send_struct(a);
  
   can.handle_can();
+  // digitalWrite(PA15, HIGH);
 
+  if (millis() > 10000) {
+    // digitalWrite(PA15, HIGH);
+  }
   // command.run();
   // motor.monitor();
   // t_can_frame frame;
