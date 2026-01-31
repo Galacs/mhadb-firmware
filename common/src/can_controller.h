@@ -107,7 +107,7 @@ public:
       message.data_length_code = frame.len;
       // Serial.printf("data len: %d\n", frame.len);
       memcpy(&message.data, frame.buf, frame.len);
-      if (twai_transmit(&message, pdMS_TO_TICKS(1000)) == ESP_OK) {
+      if (twai_transmit(&message, 0) == ESP_OK) {
           // printf("Message queued for transmission\n");
       } else {
           printf("Failed to queue message for transmission\n");
