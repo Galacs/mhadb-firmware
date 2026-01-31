@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include "can_messages.h"
 #include <Preferences.h>
+#include <Commander.h>
 
 uint16_t line_sensors[10] = {0};
 
@@ -20,6 +21,8 @@ void print_line_values(uint16_t* values) {
      Serial.println("");
 }
 
+Commander command = Commander(Serial);
+
 // Temp settings
 Preferences prefs;
 float p_motor_left_zero;
@@ -31,22 +34,22 @@ void init_settings() {
   prefs.begin("mainPrefs");
   bool tpInit = prefs.isKey("nvsInit");
   if (tpInit == false) {
-    prefs.putFloat("motorLeftZero", 0);
-    prefs.putFloat("motorRightZero", 0);
+    prefs.putFloat("motorLZero", 0);
+    prefs.putFloat("motorRZero", 0);
 
-    prefs.putChar("motorLeftDirection", 0);
-    prefs.putChar("motorRightDirection", 0);
+    prefs.putChar("motorLDir", 0);
+    prefs.putChar("motorRDir", 0);
 
     prefs.putBool("nvsInit", true);
   }
 }
 
 void load_settings() {
-  p_motor_left_zero = prefs.getFloat("motorLeftZero");
-  p_motor_right_zero = prefs.getFloat("motorRightZero");
+  p_motor_left_zero = prefs.getFloat("motorLZero");
+  p_motor_right_zero = prefs.getFloat("motorRZero");
 
-  p_motor_left_direction = prefs.getChar("motorLeftDirection");
-  p_motor_right_direction = prefs.getChar("motorRightDirection");
+  p_motor_left_direction = prefs.getChar("motorLDir");
+  p_motor_right_direction = prefs.getChar("motorRDir");
 }
 
 class MainCanHandler
@@ -78,13 +81,14 @@ class MainCanHandler
     if (data.align_request != data.CALIBRATED)
       return;
     if (data.motor_id == motor_id_t::LEFT) {
-      prefs.putFloat("motorLeftZero", data.zero_electric_angle);
-      prefs.putChar("motorLeftDirection", data.sensor_direction);
+      prefs.putFloat("motorLZero", data.zero_electric_angle);
+      prefs.putChar("motorLDir", data.sensor_direction);
     } else {
-      prefs.putFloat("motorRightZero", data.zero_electric_angle);
-      prefs.putChar("motorRightDirection", data.sensor_direction);
+      prefs.putFloat("motorRZero", data.zero_electric_angle);
+      prefs.putChar("motorRDir", data.sensor_direction);
     }
     load_settings();
+    Serial.printf("Got: %f, %d", data.zero_electric_angle, data.sensor_direction);
   }
 
   static bool update_struct(t_bldc_alignment_settings *data) {
@@ -99,17 +103,18 @@ class MainCanHandler
     data->motor_id = motor_id_t::RIGHT;
     data->zero_electric_angle = p_motor_left_zero;
     data->sensor_direction = p_motor_left_direction;
+    Serial.println("sent saved settings");
     return true;
   }
 
   static void handle_struct(t_line_sensor_raw_data data) {
     if (data.sensor_id == 9) {
-      print_line_values(line_sensors);
+      // print_line_values(line_sensors);
     }
     line_sensors[data.sensor_id] = data.value;
   }
   static void handle_struct(t_line_sensor_data data) {
-    Serial.printf("Line pos: %d\n", data.line_pos);
+    // Serial.printf("Line pos: %d\n", data.line_pos);
   }
   
 
@@ -122,6 +127,35 @@ class MainCanHandler
 MHADBCanController<MainCanHandler>* MainCanHandler::controller = nullptr;
 CanController<MHADBCanController<MainCanHandler>> can;
 
+void doStartAlign(char *cmd) {
+  // command.scalar(&debugValue, cmd);
+  // Serial.println(debugValue);
+  Serial.println("test");
+  t_bldc_alignment_start msg;
+  msg.motor_id = motor_id_t::LEFT; // not used by bldc 
+  can.send_struct(msg);
+  // can.send_rtr(BLDC_ALIGNMENT_SETTINGS);
+}
+
+void doSendAlign(char *cmd) {
+  // command.scalar(&debugValue, cmd);
+  // Serial.println(debugValue);
+  t_bldc_alignment_settings right;
+  right.align_request = right.STORED;
+  right.motor_id = motor_id_t::RIGHT;
+  right.zero_electric_angle = p_motor_right_zero;
+  right.sensor_direction = p_motor_right_direction;
+  can.send_struct(right);
+
+  t_bldc_alignment_settings left;
+  left.align_request = left.STORED;
+  left.motor_id = motor_id_t::LEFT;
+  left.zero_electric_angle = p_motor_left_zero;
+  left.sensor_direction = p_motor_left_direction;
+  can.send_struct(left);
+  Serial.println("sent saved settings");
+}
+
 // Temp test function
 void forward(float speed) {
   t_bldc_set_speed data;
@@ -132,10 +166,22 @@ void forward(float speed) {
   can.send_struct(data);
 }
 
+void doSendForward(char *cmd) {
+  float target = 0.0;
+  command.scalar(&target, cmd);
+  forward(target);
+  Serial.printf("forward: %f\n", target);
+}
+
 void setup() {
   Serial.begin(115200);
   // can.init((gpio_num_t)48, (gpio_num_t)34);
   can.init((gpio_num_t)10, (gpio_num_t)9);
+  
+  // Commander
+  command.add('A', doStartAlign);
+  command.add('B', doSendAlign);
+  command.add('F', doSendForward);
 
   init_settings();
   load_settings();
@@ -149,12 +195,13 @@ void loop() {
   // can.send_struct(a);
   // can.send_rtr(CAN_ID::LINE_RAW_SENSOR_DATA);
   can.handle_can();
-  if (millis() > 10000 && !done) {
-    done = true;
-    forward(5.0);
-    Serial.println("gooo");
-    delay(5000);
-    forward(0.0);
-  }
+  // if (millis() > 10000 && !done) {
+  //   done = true;
+  //   forward(5.0);
+  //   Serial.println("gooo");
+  //   delay(5000);
+  //   forward(0.0);
+  // }
+  command.run();
   // delay(20);
 }
