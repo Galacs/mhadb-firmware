@@ -132,6 +132,20 @@ void forward(float speed) {
   can.send_struct(data);
 }
 
+void commetuveux(float speed, float direction){
+  float coef=50;
+  
+  float puissance_rotation = direction * coef;
+  t_bldc_set_speed data;
+    data.motor_id = motor_id_t::LEFT;
+    data.speed = speed + puissance_rotation;
+    can.send_struct(data);
+    data.motor_id = motor_id_t::RIGHT;
+    data.speed = speed - puissance_rotation;
+    can.send_struct(data);
+}
+
+
 void setup() {
   Serial.begin(115200);
   // can.init((gpio_num_t)48, (gpio_num_t)34);
