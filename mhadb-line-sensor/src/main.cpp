@@ -53,51 +53,51 @@ CanController<MHADBCanController<LineCanHandler>> can;
 
 int sensors[] = {LS0, LS1, LS2, LS3, LS4, LS5, LS6, LS7, LS8, LS9 };
 
-CRGB leds_A[1];
+CRGB leds_A[5];
 CRGB leds_B[5];
 
 uint16_t line_sensors[10];
 
 void init_leds() {
-  FastLED.addLeds<WS2812B, PB13, GRB>(leds_A, 1);
-  // FastLED.addLeds<WS2812B, PB13>(leds_B, 5);
+  FastLED.addLeds<WS2812B, PB12, GRB>(leds_A, 5);
+  FastLED.addLeds<WS2812B, PB13, GRB>(leds_B, 5);
 }
 
 void update_leds(uint16_t*  values) {
   for (size_t i = 0; i < 10; i++) {
-    uint8_t brightness = map(values[i], 0, 1023, 0, 255);
+    uint8_t brightness = map(values[i], 0, 100, 0, 255);
     switch (i)
     {
     case 0:
-      leds_A[4] = brightness;
+      leds_A[4] = CRGB(0, 0, brightness);
       break;
     case 1:
-      leds_A[3] = brightness;
+      leds_A[3] = CRGB(0, 0, brightness);
       break;
     case 2:
-      leds_A[2] = brightness;
+      leds_A[2] = CRGB(0, 0, brightness);
       break;
     case 3:
-      leds_A[1] = brightness;
+      leds_A[1] = CRGB(0, 0, brightness);
       break;
     case 4:
-      leds_A[0] = brightness;
+      leds_A[0] = CRGB(0, 0, brightness);
       break;
 
     case 5:
-      leds_B[0] = brightness;
+      leds_B[0] = CRGB(0, 0, brightness);
       break;
     case 6:
-      leds_B[1] = brightness;
+      leds_B[1] = CRGB(0, 0, brightness);
       break;
     case 7:
-      leds_B[2] = brightness;
+      leds_B[2] = CRGB(0, 0, brightness);
       break;
     case 8:
-      leds_B[3] = brightness;
+      leds_B[3] = CRGB(0, 0, brightness);
       break;
     case 9:
-      leds_B[4] = brightness;
+      leds_B[4] = CRGB(0, 0, brightness);
       break;
     }
   }
@@ -241,7 +241,7 @@ int16_t get_line_position(uint16_t* values) {
   const int8_t weights[] = {-44, -34, -24, -14, -4, 4, 14, 24, 34, 44};
   int total = 0, moy_pon, sum=0;
   for (int i = 0; i < 10; i++) {
-    if (values[i] < 70)
+    if (values[i] < 50)
       values[i] = 0;
     total+=weights[i]*(values[i]);
     sum+=(values[i]);
@@ -261,7 +261,7 @@ void update_can(uint16_t* values) {
   can.send_struct(msg_content);
   for (size_t i = 0; i < 10; i++) {
     t_line_sensor_raw_data data {.sensor_id=i, .value=values[i]};
-    can.send_struct(data);
+    //can.send_struct(data);
   }
 }
 
@@ -311,7 +311,7 @@ void setup() {
 void loop() {
   update_line_sensors(sensors, line_sensors);
   print_line_values(line_sensors);
-  // update_leds(line_sensors);
+  update_leds(line_sensors);
   // can.handle_can();
   delay(100);
   // can.send_rtr(CAN_ID::BLDC_ALIGNMENT_RESULTS);
