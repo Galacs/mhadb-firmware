@@ -176,7 +176,7 @@ void setup() {
   data.shaft_angle = 69;
   can.send_struct(data);
 
-  driver.voltage_power_supply = 3.6*3;
+  driver.voltage_power_supply = 4.1*3;
   driver.init();
 
   motor.linkDriver(&driver);
@@ -188,7 +188,7 @@ void setup() {
   // motor.foc_modulation = FOCModulationType::SpaceVectorPWM;
 
   // default voltage_power_supply
-  motor.voltage_limit = 3.6*3; // Volts
+  motor.voltage_limit = 4.1*3; // Volts
 
   driver.pwm_frequency = 30000;
 
