@@ -177,7 +177,7 @@ float speed = 5;
 float direction = 0;
 
 void commetuveux(float speed, float direction){
-  float coef=50;
+  float coef=5;
   
   float puissance_rotation = direction * coef;
   t_bldc_set_speed data;
