@@ -173,6 +173,9 @@ void doSendForward(char *cmd) {
   Serial.printf("forward: %f\n", target);
 }
 
+float speed = 5;
+float direction = 0;
+
 void commetuveux(float speed, float direction){
   float coef=50;
   
@@ -186,6 +189,15 @@ void commetuveux(float speed, float direction){
     can.send_struct(data);
 }
 
+void doSpeed(char *cmd) {
+  command.scalar(&speed, cmd);
+  commetuveux(speed, direction);
+}
+
+void doDirection(char *cmd) {
+  command.scalar(&direction, cmd);
+  commetuveux(speed, direction);
+}
 
 void setup() {
   Serial.begin(115200);
@@ -196,6 +208,8 @@ void setup() {
   command.add('A', doStartAlign);
   command.add('B', doSendAlign);
   command.add('F', doSendForward);
+  command.add('S', doSpeed);
+  command.add('D', doDirection);
 
   init_settings();
   load_settings();
