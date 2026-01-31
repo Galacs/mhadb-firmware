@@ -108,7 +108,12 @@ void update_leds(uint16_t*  values) {
 void update_line_sensors(int* sensors, uint16_t*  values) {
   for (size_t i = 0; i < 10; i++) {
     // Devboard sensors
-    values[i] = analogRead(sensors[i]);
+    //#if 0
+    int val = analogRead(sensors[i]);
+    if (val<500) val=500;
+    values[i] = map(val, 500, 1024, 0, 100);
+    //#endif
+    //values[i]= analogRead(sensors[i]);
     // if (i == 3 /*|| i == 4*/ || i == 5) {
     //   values[i] = analogRead(sensors[i]);
     // } else {
@@ -129,22 +134,24 @@ int16_t get_line_position(uint16_t* values) {
   // fonction 1 rémi
   #if 0
   // TODO: Moyenne réduite ou cubique ou mieux
-  const uint8_t weights[] = {4, 14, 24, 34, 44};
+  const uint8_t weights[] = {-44, -34, -24, -14, -4, 4, 14, 24, 34, 44};
   // Devboard
   // const uint8_t weights[] = {30, 30, 30, 30, 30};
   int32_t total_moy = 0;
+  int total = 0;
   for (uint8_t i = 0; i < 10; i++) {
     // Serial.println(weights[i % 4] * values[i] * ((i < 4)? 1: -1));
     // TODO: les poids ne sont pas symmétriques
     total_moy += weights[i % 4] * values[i] * ((i < 4)? 1: -1);
+    total += values[i];
   }
   // Serial.printf("Line pos: %d \t", total_moy);
   // Devboard
-  // return total_moy/(120);
+  // return total_moy/(total);
   return total_moy;
-  #endif
+  //#endif
   // fonction 1 victor
-  #if 0
+  if 0
   double coef = 0.95;
   int max=0, k=0, sum=0; 
   int tab[10]={0}; 
@@ -162,34 +169,84 @@ int16_t get_line_position(uint16_t* values) {
   }
   return (sum/k);
   #endif
+  // fonction 2 victor
+  #if 0
+  int nb_val=10;
+  int size_group = 2;
+  
 
-  int tab[20]={0};
-  int max=0, sum=0, calc, moy_val, moy_pos, count=0;
-  for(int i=0; i<20; i++){
-    if (i%2==0){
-      calc=values[i/2];
-      tab[i]=calc;
-      sum+=calc;
-      if (calc > max) max=calc;
+  int tab[nb_val]={0};
+  int max=0, sum=0, calc, moy_val, moy_pos, count=0, max_ch=0, pos=0;
+
+  if (nb_val>10) {
+    for(int i=0; i<nb_val; i++){
+      if (i%2==0){
+        calc=values[i/2];
+        tab[i]=calc;
+        sum+=calc;
+        if (calc > max) max=calc;
+      }
+      else {
+        calc=int(values[((i-1)/2)]+values[((i+1)/2)]);
+        tab[i]=calc;
+        sum+=calc;
+        if (calc > max) max=calc;
+      }
+    }
+  }
+  if (nb_val==10){
+    for (int i=0;i<10;i++) {
+      sum+=values[i];
+      tab[i] = values[i];
+    }
+  }
+
+  moy_val=int(sum/nb_val);
+  for(int j=0; j<nb_val; j++){
+    if (tab[j]<=moy_val) tab[j]=0;
+  }
+
+  if (size_group == 2) {
+    for (int k=2;k<nb_val;k++){
+      if((tab[k])&& ((tab[k+1])||(tab[k-1])) ) continue;
+      else tab[k]=0;
+    }
+  }
+  if (size_group == 3) {
+    for (int k=2;k<nb_val;k++){
+      if( (tab[k])&& ((tab[k+1]) && (tab[k+2])  ||  (tab[k-1] && tab[k-2]) || (tab[k-1] && tab[k+1])) ) continue;
+      else tab[k]=0;
+    }
+  }
+
+  count = 0;
+  max_ch = 0;
+  for(int i=1;i<nb_val;i++) {
+    if (tab[i-1] && tab[i]) {
+      count++;
+      if ((tab[i-2]==0)&& i!=1) pos=i-1;
     }
     else {
-      calc=int(values[((i-1)/2)]+values[((i+1)/2)]);
-      tab[i]=calc;
-      sum+=calc;
-      if (calc > max) max=calc;
+      if (count>max) max_ch=count;
+      count=0;
     }
-  }
-  moy_val=int(sum/20);
-  for(int j=0; j<20; j++){
-    if (tab[j]<=moy_val) tab[j]=0;
-    else tab[j]=1;
-  }
-  for (int k=2;k<20;k++){
-    //if( (tab[k])&& ((tab[k+1]) && (tab[k+2])  ||  (tab[k-1] && tab[k-2]) || (tab[k-1] && tab[k+1])) ) continue;
-    if( (tab[k])&& ((tab[k+1]) && (tab[k+2])  ||  (tab[k-1] && tab[k-2]) || (tab[k-1] && tab[k+1])) ) continue;
-    else tab[k]=0;
-  }
+  } // potentiellement pos=0 et max_ch=0
 
+  sum=0;
+  for(int i=pos;i<pos+count;i++){
+    sum+=i;
+  }
+  return float(sum/count);
+  #endif
+  const int8_t weights[] = {-44, -34, -24, -14, -4, 4, 14, 24, 34, 44};
+  int total = 0, moy_pon, sum=0;
+  for (int i = 0; i < 10; i++) {
+    total+=weights[i]*(100-values[i]);
+    sum+=(100-values[i]);
+  }
+  moy_pon = int(total/sum)*4;
+
+  return moy_pon; 
 }
 
 void update_can(uint16_t* values) {
@@ -222,7 +279,7 @@ void setup() {
   Serial.println("salut rhey");
   can.send_rtr(CAN_ID::BLDC_CURRENT_POS);
   can.send_rtr(CAN_ID::BLDC_CURRENT_SPEED);
-  t_bldc_alignment_start align_msg = {.motor_id=t_bldc_alignment_start::LEFT};
+  t_bldc_alignment_start align_msg = {.motor_id=motor_id_t::LEFT};
   can.send_struct(align_msg);
   
   init_leds();
