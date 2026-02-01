@@ -76,7 +76,7 @@ class BldcCanHandler
     #ifdef bldc_LEFT
     side = motor_id_t::LEFT;
     #endif
-    if (data.motor_id == side && data.align_request == data.STORED) {
+    if (data.motor_id == side && data.align_request == data.STORED && state != bldc_state_t::RUNNING) {
       // digitalWrite(PA15, HIGH);
       timer->pause();
       motor.zero_electric_angle  = data.zero_electric_angle;
@@ -238,7 +238,10 @@ void setup() {
   can_timer->resume();
   can.send_rtr(BLDC_ALIGNMENT_SETTINGS);
 }
-int i = 0;
+int last = 0;
 void loop() {
-
+  if (millis() > last + 2000 && state == bldc_state_t::RESET) {
+    last = millis();
+    can.send_rtr(BLDC_ALIGNMENT_SETTINGS);
+  }
 }

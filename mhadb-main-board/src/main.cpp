@@ -112,7 +112,7 @@ class MainCanHandler
     controller->send_struct(right);
 
     data->align_request = data->STORED;
-    data->motor_id = motor_id_t::RIGHT;
+    data->motor_id = motor_id_t::LEFT;
     data->zero_electric_angle = p_motor_left_zero;
     data->sensor_direction = p_motor_left_direction;
     Serial.println("sent saved settings");
