@@ -283,8 +283,8 @@ void doR(char *cmd) { myPID.Reset(); }
 
 void setup() {
   Serial.begin(115200);
-  // can.init((gpio_num_t)48, (gpio_num_t)34);
-  can.init((gpio_num_t)10, (gpio_num_t)9);
+  can.init((gpio_num_t)48, (gpio_num_t)34);
+  // can.init((gpio_num_t)10, (gpio_num_t)9);
 
   Setpoint = 0;
   
