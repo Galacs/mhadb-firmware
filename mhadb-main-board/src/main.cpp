@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include "can_messages.h"
 #include <Preferences.h>
-#include <Commander.h>
+#include "Commander.h"
 #include <QuickPID.h>
 
 
@@ -295,6 +295,8 @@ void setup() {
   Setpoint = 0;
   
   // Commander
+  command.verbose = VerboseMode::user_friendly;
+  command.decimal_places = 5;
   command.add('A', doStartAlign);
   command.add('B', doSendAlign);
   command.add('F', doSendForward);
