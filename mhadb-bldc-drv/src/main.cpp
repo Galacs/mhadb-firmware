@@ -40,6 +40,7 @@ enum class bldc_state_t: uint8_t {
   RESET,
   CALIBRATING,
   RUNNING,
+  DISABLED,
   EMG,
 };
 
@@ -66,6 +67,11 @@ class BldcCanHandler
         motor_target = data.speed;
       }
     }
+  }
+
+  static void handle_struct(t_bldc_disable data) {
+    timer->pause();
+    state = bldc_state_t::DISABLED;
   }
 
   static void handle_struct(t_bldc_alignment_settings data) {

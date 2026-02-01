@@ -164,6 +164,11 @@ void doFollow(char *cmd) {
   }
 }
 
+void doDisableBLDC(char *cmd) {
+  t_bldc_disable data;
+  can.send_struct(data);
+}
+
 void doSendAlign(char *cmd) {
   // command.scalar(&debugValue, cmd);
   // Serial.println(debugValue);
@@ -259,6 +264,7 @@ void setup() {
   command.add('S', doSpeed);
   command.add('D', doDirection);
   command.add('L', doFollow);
+  command.add('X', doDisableBLDC);
   
 
   init_settings();
