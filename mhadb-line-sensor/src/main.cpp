@@ -115,11 +115,11 @@ void update_line_sensors(int* sensors, uint16_t*  values) {
   for (size_t i = 0; i < 10; i++) {
     // Devboard sensors
     //#if 0
-    int val = analogRead(sensors[i]);
-    if (val<500) val=500;
-    values[i] = map(val, 500, 1024, 0, 100);
+    // int val = analogRead(sensors[i]);
+    // if (val<500) val=500;
+    // values[i] = map(val, 500, 1024, 0, 100);
     //#endif
-    //values[i]= analogRead(sensors[i]);
+    values[i]= analogRead(sensors[i]);
     // if (i == 3 /*|| i == 4*/ || i == 5) {
     //   values[i] = analogRead(sensors[i]);
     // } else {
@@ -135,6 +135,7 @@ void print_line_values(uint16_t* values) {
      }
      Serial.println("");
 }
+
 
 int16_t get_line_position(uint16_t* values) {
   // fonction 1 rémi
@@ -247,8 +248,11 @@ int16_t get_line_position(uint16_t* values) {
   const int8_t weights[] = {-44, -34, -24, -14, -4, 4, 14, 24, 34, 44};
   int total = 0, moy_pon, sum=0;
   for (int i = 0; i < 10; i++) {
-    if (values[i] < 50)
-      values[i] = 0;
+    // values[i] = 100 - values[i];
+    // if (values[i] < 900)
+    //   values[i] = 0;
+    values[i] = constrain(values[i], 900, 1050);
+    values[i] = map(values[i], 900, 1030, 0, 100);
     total+=weights[i]*(values[i]);
     sum+=(values[i]);
   }
@@ -267,7 +271,7 @@ void update_can(uint16_t* values) {
   can.send_struct(msg_content);
   for (size_t i = 0; i < 10; i++) {
     t_line_sensor_raw_data data {.sensor_id=i, .value=values[i]};
-    //can.send_struct(data);
+    can.send_struct(data);
   }
 }
 
@@ -293,7 +297,7 @@ void setup() {
   init_leds();
   //digitalWrite(PA15, HIGH);
   leds_A[0] = CRGB::Red4;
-  FastLED.setBrightness(20);
+  FastLED.setBrightness(30);
   FastLED.show();
 
   //digitalWrite(PA15, HIGH);
@@ -304,10 +308,9 @@ void setup() {
   // init_leds();
 
   HardwareTimer* can_timer = new HardwareTimer(TIM2);
-  can_timer->setOverflow(120, HERTZ_FORMAT);
+  can_timer->setOverflow(500, HERTZ_FORMAT);
   can_timer->attachInterrupt([](){
     can.handle_can();
-    update_can(line_sensors);
   });
   // start the timer
   can_timer->resume();
@@ -317,8 +320,9 @@ void setup() {
 void loop() {
   update_line_sensors(sensors, line_sensors);
   print_line_values(line_sensors);
+  update_can(line_sensors);
   update_leds(line_sensors);
   // can.handle_can();
-  delay(100);
+  delay(10);
   // can.send_rtr(CAN_ID::BLDC_ALIGNMENT_RESULTS);
 }
