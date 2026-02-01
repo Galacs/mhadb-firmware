@@ -13,6 +13,18 @@ QuickPID myPID(&Input, &Output, &Setpoint);
 
 uint16_t line_sensors[10] = {0};
 
+bool line_debug = false;
+unsigned long last_debug_line_raw = 0;
+unsigned long last_debug_line = 0;
+
+bool elapsed(unsigned long* last_run, unsigned long time) {
+  if (millis() > *last_run + time) {
+    *last_run = millis();
+    return true;
+  }
+  return false;
+}
+
 enum bldc_main_t: uint8_t {
   RESET,
   INITIALIZING,
@@ -120,13 +132,15 @@ class MainCanHandler
   }
 
   static void handle_struct(t_line_sensor_raw_data data) {
-    if (data.sensor_id == 9) {
+    if (data.sensor_id == 9 && line_debug && elapsed(&last_debug_line_raw, 100)) {
       print_line_values(line_sensors);
     }
     line_sensors[data.sensor_id] = data.value;
   }
   static void handle_struct(t_line_sensor_data data) {
-    //Serial.printf("Line pos: %d\n", data.line_pos);
+    if (line_debug && elapsed(&last_debug_line, 100)) {
+      Serial.printf("Line pos: %d\n", data.line_pos);
+    }
     line = data.line_pos;
   }
   
@@ -143,7 +157,7 @@ CanController<MHADBCanController<MainCanHandler>> can;
 void doStartAlign(char *cmd) {
   // command.scalar(&debugValue, cmd);
   // Serial.println(debugValue);
-  Serial.println("test");
+  // Serial.println("test");
   t_bldc_alignment_start msg;
   msg.motor_id = motor_id_t::LEFT; // not used by bldc 
   can.send_struct(msg);
@@ -167,6 +181,14 @@ void doFollow(char *cmd) {
 void doDisableBLDC(char *cmd) {
   t_bldc_disable data;
   can.send_struct(data);
+}
+
+void doDebug(char *cmd) {
+  switch (cmd[0]) {
+    case 'L':
+  line_debug = !line_debug;
+    break;
+  };
 }
 
 void doSendAlign(char *cmd) {
@@ -201,8 +223,9 @@ void forward(float speed) {
 void doSendForward(char *cmd) {
   float target = 0.0;
   command.scalar(&target, cmd);
+  // Serial.printf("forward: %f\n", target);
+  // delay(10);
   forward(target);
-  Serial.printf("forward: %f\n", target);
 }
 
 float speed = 5;
@@ -213,31 +236,32 @@ void commetuveux(float speed, float direction){
   
   float puissance_rotation = direction * coef;
   t_bldc_set_speed data;
-    data.motor_id = motor_id_t::LEFT;
-    data.speed = speed + puissance_rotation;
-    can.send_struct(data);
-    data.motor_id = motor_id_t::RIGHT;
-    data.speed = speed - puissance_rotation;
-    can.send_struct(data);
+  data.motor_id = motor_id_t::LEFT;
+  data.speed = speed + puissance_rotation;
+  can.send_struct(data);
+  data.motor_id = motor_id_t::RIGHT;
+  data.speed = speed - puissance_rotation;
+  can.send_struct(data);
 }
 
 void following() {
-  if (state == FOLLOWING) {
-    Serial.println(line);
-    if (line > 50) {
-      direction = 0.4;
-    } else if (line < -50) {
-      direction = -0.4;
-    } else {
-      direction = 0;
-    }
-    commetuveux(speed, direction);
-  }
- /*if (state == FOLLOWING) {
+  // if (state == FOLLOWING) {
+  //   Serial.println(line);
+  //   if (line > 50) {
+  //     direction = 0.4;
+  //   } else if (line < -50) {
+  //     direction = -0.4;
+  //   } else {
+  //     direction = 0;
+  //   }
+  //   commetuveux(speed, direction);
+  // }
+ if (state == FOLLOWING) {
   //Input = line;
-  Input = 5;
-  Serial.printf("line: %d, sortie: %d\n", line, Output);
- }*/
+  Input = 4;
+  myPID.Compute();
+  Serial.printf("line: %f, sortie: %f\n", Input, Output);
+ }
 }
 
 void doSpeed(char *cmd) {
@@ -265,6 +289,7 @@ void setup() {
   command.add('D', doDirection);
   command.add('L', doFollow);
   command.add('X', doDisableBLDC);
+  command.add('H', doDebug);
   
 
   init_settings();
@@ -272,6 +297,7 @@ void setup() {
 
   myPID.SetTunings(Kp, Ki, Kd);
   myPID.SetMode(myPID.Control::automatic);
+  myPID.SetOutputLimits(-1, 1);
 }
 
 bool done = false;
