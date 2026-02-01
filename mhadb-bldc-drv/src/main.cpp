@@ -77,7 +77,7 @@ class BldcCanHandler
     side = motor_id_t::LEFT;
     #endif
     if (data.motor_id == side && data.align_request == data.STORED) {
-      digitalWrite(PA15, HIGH);
+      // digitalWrite(PA15, HIGH);
       timer->pause();
       motor.zero_electric_angle  = data.zero_electric_angle;
       motor.sensor_direction = (Direction)data.sensor_direction;
@@ -89,8 +89,13 @@ class BldcCanHandler
   }
 
   static void handle_struct(t_bldc_alignment_start data) {
+    if (state == bldc_state_t::CALIBRATING)
+      return;
     timer->pause();
     state = bldc_state_t::CALIBRATING;
+    // digitalWrite(PA15, HIGH);
+    // delay(500);
+    // digitalWrite(PA15, LOW);
     // Serial.println("aligning...");
     motor.zero_electric_angle  = NOT_SET;
     motor.sensor_direction = Direction::UNKNOWN; // CW or CCW
@@ -188,7 +193,7 @@ void setup() {
   // motor.foc_modulation = FOCModulationType::SpaceVectorPWM;
 
   // default voltage_power_supply
-  motor.voltage_limit = 4.1*3; // Volts
+  // motor.voltage_limit = 4.1*3; // Volts
 
   driver.pwm_frequency = 30000;
 
