@@ -18,8 +18,8 @@
 #define SCL PB6
 #define SDA PB7
 
-// #define bldc_LEFT
-#define bldc_RIGHT
+#define bldc_LEFT
+// #define bldc_RIGHT
 
 float motor_target = 0;
 
@@ -89,13 +89,13 @@ class BldcCanHandler
   }
 
   static void handle_struct(t_bldc_alignment_start data) {
+    digitalWrite(PA15, HIGH);
+    delay(500);
+    digitalWrite(PA15, LOW);
     if (state == bldc_state_t::CALIBRATING)
       return;
     timer->pause();
     state = bldc_state_t::CALIBRATING;
-    // digitalWrite(PA15, HIGH);
-    // delay(500);
-    // digitalWrite(PA15, LOW);
     // Serial.println("aligning...");
     motor.zero_electric_angle  = NOT_SET;
     motor.sensor_direction = Direction::UNKNOWN; // CW or CCW
@@ -116,27 +116,19 @@ class BldcCanHandler
     settings_msg.zero_electric_angle = motor.zero_electric_angle;
     settings_msg.sensor_direction = motor.sensor_direction;
     controller->send_struct(settings_msg);
-    // Serial.println("aligned...");
     timer->resume();
   }
 
   static bool update_struct(t_bldc_current_pos* data) {
-    // data->motor_id = data->RIGHT;
     data->shaft_angle = motor.shaft_angle;
-    // data->shaft_angle = 10.5;
-    // Serial.printf("%f will be sent", data->shaft_angle);
-    // Serial.println(data->shaft_angle);
-    // Serial.println("received rtr");
     return true;
   }
   static bool update_struct(t_bldc_current_speed* data) {
-    //data->motor_id = data->RIGHT;
     data->speed = motor.shaft_velocity;
     return true;
   }
 
   static bool update_struct(t_bldc_alignment_settings* data) {
-    // digitalWrite(PA15, HIGH);
     motor_id_t side;
     #ifdef bldc_RIGHT
     side = motor_id_t::RIGHT;
@@ -166,7 +158,6 @@ struct __attribute__ ((packed)) t_motor_command   {
 };
 
 void setup() {
-  // Serial.begin(115200);
   pinMode(PA15, OUTPUT);
   digitalWrite(PA15, LOW);
   t_bldc_current_pos data {.shaft_angle=10};
@@ -239,7 +230,7 @@ void setup() {
   // timer->resume();
 
   HardwareTimer* can_timer = new HardwareTimer(TIM3);
-  can_timer->setOverflow(120, HERTZ_FORMAT);
+  can_timer->setOverflow(400, HERTZ_FORMAT);
   can_timer->attachInterrupt([](){
     can.handle_can();
   });
@@ -249,27 +240,5 @@ void setup() {
 }
 int i = 0;
 void loop() {
-  // t_line_sensor_raw_data a {.sensor_id=10, .value=(int)motor.shaft_velocity};
-
-  // can.send_struct(a);
- 
-  can.handle_can();
-  // digitalWrite(PA15, HIGH);
-
-  if (millis() > 10000) {
-    // digitalWrite(PA15, HIGH);
-  }
-  // command.run();
-  // motor.monitor();
-  // t_can_frame frame;
-  // if (can.receive_can(&frame)) {
-  //   Serial.println("received");
-  // }
-
-  // read_can();
-  //delay(200);
-  // Serial.printf("running..., %d\n", i);
-  // i++;
-  // delay(200);
 
 }
