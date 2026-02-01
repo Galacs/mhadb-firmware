@@ -29,23 +29,6 @@
 
 class LineCanHandler {
 public:
-  static void handle_struct(t_bldc_current_pos data) {
-    // Serial.printf("Line pos: %d\n", data.shaft_angle);
-    // Serial.printf("yay: %f", data.shaft_angle);
-    Serial.print("oof: ");
-    Serial.println(data.shaft_angle);
-    // Serial.println(sizeof(t_bldc_current_pos));
-  }
-  static void handle_struct(t_bldc_current_speed data) {
-    Serial.print("speed: ");
-    Serial.println(data.speed);
-  }
-
-  static void handle_struct(t_bldc_alignment_settings data) {
-    // Serial.print("zero angle: ");
-    // Serial.println(data.zero_electric_angle);
-    // Serial.printf("direction: %d\n", data.sensor_direction);
-  }
 
   template<typename T>
   static void handle_struct(T data) {};
@@ -299,10 +282,10 @@ void setup() {
   can.init();
   // delay(1000);
   Serial.println("salut rhey");
-  can.send_rtr(CAN_ID::BLDC_CURRENT_POS);
-  can.send_rtr(CAN_ID::BLDC_CURRENT_SPEED);
-  t_bldc_alignment_start align_msg = {.motor_id=motor_id_t::LEFT};
-  can.send_struct(align_msg);
+  // can.send_rtr(CAN_ID::BLDC_CURRENT_POS);
+  // can.send_rtr(CAN_ID::BLDC_CURRENT_SPEED);
+  // t_bldc_alignment_start align_msg = {.motor_id=motor_id_t::LEFT};
+  // can.send_struct(align_msg);
   
   init_leds();
   //digitalWrite(PA15, HIGH);
@@ -333,6 +316,6 @@ void loop() {
   update_can();
   update_leds();
   // can.handle_can();
-  delay(10);
+  delay(50);
   // can.send_rtr(CAN_ID::BLDC_ALIGNMENT_RESULTS);
 }
