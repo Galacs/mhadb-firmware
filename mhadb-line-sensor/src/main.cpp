@@ -245,18 +245,21 @@ int16_t get_line_position(uint16_t* values) {
   }
   return float(sum/count);
   #endif
+
+  #define LINE_TRESH 900
+
   const int8_t weights[] = {-44, -34, -24, -14, -4, 4, 14, 24, 34, 44};
   int total = 0, moy_pon, sum=0;
   for (int i = 0; i < 10; i++) {
     // values[i] = 100 - values[i];
     // if (values[i] < 900)
     //   values[i] = 0;
-    values[i] = constrain(values[i], 900, 1050);
-    values[i] = map(values[i], 900, 1030, 0, 100);
+    values[i] = constrain(values[i], LINE_TRESH, 1050);
+    values[i] = map(values[i], LINE_TRESH, 1050, 0, 100);
     total+=weights[i]*(values[i]);
     sum+=(values[i]);
   }
-  moy_pon = int(total/sum*4);
+  moy_pon = (total*100)/sum;
 
   return moy_pon; 
 }
