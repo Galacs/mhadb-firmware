@@ -16,8 +16,10 @@ uint16_t line_sensors_raw[10] = {0};
 
 bool line_debug = false;
 bool line_raw_debug = false;
+bool line_pos_debug = false;
 unsigned long last_debug_line_raw = 0;
 unsigned long last_debug_line = 0;
+unsigned long last_debug_line_pos = 0;
 
 bool elapsed(unsigned long* last_run, unsigned long time) {
   if (millis() > *last_run + time) {
@@ -134,7 +136,7 @@ class MainCanHandler
   }
 
   static void handle_struct(t_line_sensor_raw_data data) {
-    if (data.sensor_id == 9 && line_debug && elapsed(&last_debug_line_raw, 100)) {
+    if (data.sensor_id == 9 && line_debug && elapsed(&last_debug_line, 100)) {
       print_line_values(line_sensors_mapped);
     }
     if (data.sensor_id == 9 && line_raw_debug && elapsed(&last_debug_line_raw, 100)) {
@@ -144,7 +146,7 @@ class MainCanHandler
     line_sensors_raw[data.sensor_id] = data.raw_value;
   }
   static void handle_struct(t_line_sensor_data data) {
-    if (line_debug && elapsed(&last_debug_line, 100)) {
+    if (line_pos_debug && elapsed(&last_debug_line_pos, 100)) {
       Serial.printf("Line pos: %d\n", data.line_pos);
     }
     line = data.line_pos;
@@ -187,10 +189,14 @@ void doDisableBLDC(char *cmd) {
 
 void doDebug(char *cmd) {
   switch (cmd[0]) {
-    case 'L':
-  line_debug = !line_debug;
-    case 'R':
-  line_raw_debug = !line_raw_debug;
+  case 'M':
+    line_debug = !line_debug;
+    break;
+  case 'R':
+    line_raw_debug = !line_raw_debug;
+  break;
+  case 'L':
+    line_pos_debug = !line_pos_debug;
     break;
   };
 }
