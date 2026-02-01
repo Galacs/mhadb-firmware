@@ -197,14 +197,15 @@ void setup() {
 
   driver.pwm_frequency = 30000;
 
-  motor.PID_velocity.P = 0.2;
+  motor.PID_velocity.P = 0.1;
   motor.PID_velocity.I = 20;
-  motor.PID_velocity.D = 0.0001;
+  // motor.PID_velocity.D = 0.0001;
+  motor.PID_velocity.D = 0;
   motor.PID_velocity.output_ramp = 1000;
 
   motor.P_angle.P = 15;
 
-  motor.LPF_velocity.Tf = 0.01;
+  motor.LPF_velocity.Tf = 0.001;
 
   // initialize motor
   motor.init();
