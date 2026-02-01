@@ -112,11 +112,13 @@ public:
       // Serial.printf("data len: %d\n", frame.len);
       memcpy(&message.data, frame.buf, frame.len);
       // Serial.printf("Size: %d, first: %d\n", frame.len, frame.buf[0]);
+      // delay(5);
       if (twai_transmit(&message, 0) == ESP_OK) {
           // printf("Message queued for transmission\n");
       } else {
           printf("Failed to queue message for transmission\n");
       }
+      // delay(5);
   };
 
   bool receive_can(t_can_frame* frame) {

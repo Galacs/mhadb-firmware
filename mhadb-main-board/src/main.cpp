@@ -7,7 +7,7 @@
 
 float Setpoint, Input, Output;
 
-float Kp = 2, Ki = 1, Kd = 0;
+float Kp = 20, Ki = 5, Kd = 20;
 
 QuickPID myPID(&Input, &Output, &Setpoint);
 
@@ -168,13 +168,9 @@ void doFollow(char *cmd) {
   if (state == FOLLOWING) {
     Serial.println("now stop....");
     state = RESET;
-    //turn the PID on
-    //myPID.SetMode(myPID.Control::manual);
   } else {
     Serial.println("now following....");
     state = FOLLOWING;
-    //turn the PID on
-    //myPID.SetMode(myPID.Control::automatic);
   }
 }
 
@@ -228,7 +224,7 @@ void doSendForward(char *cmd) {
   forward(target);
 }
 
-float speed = 5;
+float speed = 0;
 float direction = 0;
 
 void commetuveux(float speed, float direction){
@@ -257,10 +253,12 @@ void following() {
   //   commetuveux(speed, direction);
   // }
  if (state == FOLLOWING) {
-  //Input = line;
-  Input = 4;
+  Input = line;
+  Input /= 100000;
+  // Input = 4;
   myPID.Compute();
-  Serial.printf("line: %f, sortie: %f\n", Input, Output);
+  Serial.printf("line: %f, sortie: %f\n", Input*20, Output);
+  commetuveux(speed, -Output);
  }
 }
 
@@ -274,6 +272,11 @@ void doDirection(char *cmd) {
   commetuveux(speed, direction);
 }
 
+void doP(char *cmd) { command.scalar(&Kp, cmd); myPID.SetTunings(Kp, Ki, Kd); }
+void doI(char *cmd) { command.scalar(&Ki, cmd); myPID.SetTunings(Kp, Ki, Kd); }
+void doD(char *cmd) { command.scalar(&Kd, cmd); myPID.SetTunings(Kp, Ki, Kd); }
+void doR(char *cmd) { myPID.Reset(); }
+
 void setup() {
   Serial.begin(115200);
   // can.init((gpio_num_t)48, (gpio_num_t)34);
@@ -286,18 +289,26 @@ void setup() {
   command.add('B', doSendAlign);
   command.add('F', doSendForward);
   command.add('S', doSpeed);
-  command.add('D', doDirection);
+  command.add('O', doDirection);
   command.add('L', doFollow);
   command.add('X', doDisableBLDC);
   command.add('H', doDebug);
+
+  command.add('P', doP);
+  command.add('I', doI);
+  command.add('D', doD);
+  command.add('R', doR);
+
   
 
   init_settings();
   load_settings();
 
   myPID.SetTunings(Kp, Ki, Kd);
-  myPID.SetMode(myPID.Control::automatic);
+  enum class Control : uint8_t {manual, automatic, timer, toggle};  // controller mode
+  myPID.SetMode((uint8_t) Control::automatic);
   myPID.SetOutputLimits(-1, 1);
+  myPID.SetSampleTimeUs(1000);
 }
 
 bool done = false;
