@@ -11,9 +11,11 @@ float Kp = 15, Ki = 0, Kd = 0;
 
 QuickPID myPID(&Input, &Output, &Setpoint);
 
-uint16_t line_sensors[10] = {0};
+uint16_t line_sensors_mapped[10] = {0};
+uint16_t line_sensors_raw[10] = {0};
 
 bool line_debug = false;
+bool line_raw_debug = false;
 unsigned long last_debug_line_raw = 0;
 unsigned long last_debug_line = 0;
 
@@ -133,9 +135,13 @@ class MainCanHandler
 
   static void handle_struct(t_line_sensor_raw_data data) {
     if (data.sensor_id == 9 && line_debug && elapsed(&last_debug_line_raw, 100)) {
-      print_line_values(line_sensors);
+      print_line_values(line_sensors_mapped);
     }
-    line_sensors[data.sensor_id] = data.value;
+    if (data.sensor_id == 9 && line_raw_debug && elapsed(&last_debug_line_raw, 100)) {
+      print_line_values(line_sensors_raw);
+    }
+    line_sensors_mapped[data.sensor_id] = data.mapped_value;
+    line_sensors_raw[data.sensor_id] = data.raw_value;
   }
   static void handle_struct(t_line_sensor_data data) {
     if (line_debug && elapsed(&last_debug_line, 100)) {
@@ -183,6 +189,8 @@ void doDebug(char *cmd) {
   switch (cmd[0]) {
     case 'L':
   line_debug = !line_debug;
+    case 'R':
+  line_raw_debug = !line_raw_debug;
     break;
   };
 }
@@ -253,10 +261,6 @@ void following() {
   //   commetuveux(speed, direction);
   // }
  if (state == FOLLOWING) {
-  Input = line;
-  Input /= 100000;
-  // Input = 4;
-  myPID.Compute();
   Serial.printf("line: %f, sortie: %f\n", Input*20, Output);
   commetuveux(speed, -Output);
  }
@@ -321,6 +325,8 @@ void loop() {
     following();
   }
   //Serial.println(state);
+  Input = line;
+  Input /= 100000;
   myPID.Compute();
 
   // t_line_sensor_raw_data a {.id=10, .value=126};

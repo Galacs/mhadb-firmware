@@ -27,7 +27,8 @@ enum motor_id_t: int8_t {
 
 CAN_STRUCT(t_line_sensor_raw_data, CAN_ID::LINE_RAW_SENSOR_DATA,
   uint8_t sensor_id;
-  uint16_t value;
+  uint16_t mapped_value;
+  uint16_t raw_value;
 );
 
 CAN_STRUCT(t_line_sensor_data, CAN_ID::LINE_SENSOR_DATA,

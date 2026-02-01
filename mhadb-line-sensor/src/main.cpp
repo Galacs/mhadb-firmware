@@ -23,6 +23,10 @@
 #define LS8 PB0
 #define LS9 PB1
 
+
+#define LINE_TRESH 900
+
+
 class LineCanHandler {
 public:
   static void handle_struct(t_bldc_current_pos data) {
@@ -53,10 +57,14 @@ CanController<MHADBCanController<LineCanHandler>> can;
 
 int sensors[] = {LS0, LS1, LS2, LS3, LS4, LS5, LS6, LS7, LS8, LS9 };
 
+uint16_t raw_values[10] = {0};
+uint16_t mapped_values[10] = {0};
+
 CRGB leds_A[5];
 CRGB leds_B[5];
 
-uint16_t line_sensors[10];
+uint16_t line_sensors_mapped[10];
+uint16_t line_sensors_raw[10];
 
 void init_leds() {
   FastLED.addLeds<WS2812B, PB12, GRB>(leds_A, 5);
@@ -69,9 +77,9 @@ DEFINE_GRADIENT_PALETTE( heatmap_gp ) {
 255,   15,  250,  255 };
 CRGBPalette16 myPal = heatmap_gp;
 
-void update_leds(uint16_t*  values) {
+void update_leds() {
   for (size_t i = 0; i < 10; i++) {
-    uint8_t brightness = map(values[i], 0, 100, 0, 250);
+    uint8_t brightness = map(mapped_values[i], 0, 100, 0, 250);
     switch (i)
     {
     case 0:
@@ -111,7 +119,7 @@ void update_leds(uint16_t*  values) {
   FastLED.show();
 }
 
-void update_line_sensors(int* sensors, uint16_t*  values) {
+void update_line_sensors(int* sensors) {
   for (size_t i = 0; i < 10; i++) {
     // Devboard sensors
     //#if 0
@@ -119,7 +127,9 @@ void update_line_sensors(int* sensors, uint16_t*  values) {
     // if (val<500) val=500;
     // values[i] = map(val, 500, 1024, 0, 100);
     //#endif
-    values[i]= analogRead(sensors[i]);
+    raw_values[i]= analogRead(sensors[i]);
+    mapped_values[i] = constrain(raw_values[i], LINE_TRESH, 1050);
+    mapped_values[i] = map(mapped_values[i], LINE_TRESH, 1050, 0, 100);
     // if (i == 3 /*|| i == 4*/ || i == 5) {
     //   values[i] = analogRead(sensors[i]);
     // } else {
@@ -246,7 +256,6 @@ int16_t get_line_position(uint16_t* values) {
   return float(sum/count);
   #endif
 
-  #define LINE_TRESH 900
 
   const int8_t weights[] = {-44, -34, -24, -14, -4, 4, 14, 24, 34, 44};
   int total = 0, moy_pon, sum=0;
@@ -254,26 +263,24 @@ int16_t get_line_position(uint16_t* values) {
     // values[i] = 100 - values[i];
     // if (values[i] < 900)
     //   values[i] = 0;
-    values[i] = constrain(values[i], LINE_TRESH, 1050);
-    values[i] = map(values[i], LINE_TRESH, 1050, 0, 100);
-    total+=weights[i]*(values[i]);
-    sum+=(values[i]);
+    total+=weights[i]*(mapped_values[i]);
+    sum+=(mapped_values[i]);
   }
   moy_pon = (total*100)/sum;
 
   return moy_pon; 
 }
 
-void update_can(uint16_t* values) {
+void update_can() {
   // for (uint8_t i = 0; i < 10; i++) {
   //   t_line_sensor_raw_data msg_content = {i, values[i]};
   //   Can.send_struct(msg_content);
   // }
-  t_line_sensor_data msg_content { .line_pos=get_line_position(values) };
+  t_line_sensor_data msg_content { .line_pos=get_line_position(mapped_values) };
   // Serial.printf("can to be line pos: %d\n", msg_content.line_pos);
   can.send_struct(msg_content);
   for (size_t i = 0; i < 10; i++) {
-    t_line_sensor_raw_data data {.sensor_id=i, .value=values[i]};
+    t_line_sensor_raw_data data {.sensor_id=i, .mapped_value=mapped_values[i], .raw_value=raw_values[i]};
     can.send_struct(data);
   }
 }
@@ -321,10 +328,10 @@ void setup() {
 }
 
 void loop() {
-  update_line_sensors(sensors, line_sensors);
-  print_line_values(line_sensors);
-  update_can(line_sensors);
-  update_leds(line_sensors);
+  update_line_sensors(sensors);
+  // print_line_values(line_sensors);
+  update_can();
+  update_leds();
   // can.handle_can();
   delay(10);
   // can.send_rtr(CAN_ID::BLDC_ALIGNMENT_RESULTS);
