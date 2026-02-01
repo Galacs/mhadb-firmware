@@ -47,7 +47,7 @@ public:
   CanController(): m_stm32CAN(CAN1, DEF) {};
   void init() {
     m_stm32CAN.begin();
-    m_stm32CAN.setBaudRate(100000);
+    m_stm32CAN.setBaudRate(500000);
     // m_stm32CAN.setBaudRate(1000000);
     // m_stm32CAN.setBaudRate(10000);
   };
@@ -84,7 +84,8 @@ public:
     twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT(tx, rx, TWAI_MODE_NORMAL);
     // twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT(tx, rx, TWAI_MODE_NO_ACK);
     // twai_timing_config_t t_config = TWAI_TIMING_CONFIG_1MBITS();
-    twai_timing_config_t t_config = TWAI_TIMING_CONFIG_100KBITS();
+    // twai_timing_config_t t_config = TWAI_TIMING_CONFIG_100KBITS();
+    twai_timing_config_t t_config = TWAI_TIMING_CONFIG_500KBITS();
     // twai_timing_config_t t_config = TWAI_TIMING_CONFIG_10KBITS();
     twai_filter_config_t f_config = TWAI_FILTER_CONFIG_ACCEPT_ALL();
 
@@ -112,13 +113,13 @@ public:
       // Serial.printf("data len: %d\n", frame.len);
       memcpy(&message.data, frame.buf, frame.len);
       // Serial.printf("Size: %d, first: %d\n", frame.len, frame.buf[0]);
-      // delay(5);
+      // delay(50);
       if (twai_transmit(&message, 0) == ESP_OK) {
           // printf("Message queued for transmission\n");
       } else {
           printf("Failed to queue message for transmission\n");
       }
-      // delay(5);
+      // delay(50);
   };
 
   bool receive_can(t_can_frame* frame) {
