@@ -7,7 +7,7 @@
 
 float Setpoint, Input, Output;
 
-float Kp = 20, Ki = 5, Kd = 20;
+float Kp = 15, Ki = 0, Kd = 0;
 
 QuickPID myPID(&Input, &Output, &Setpoint);
 
