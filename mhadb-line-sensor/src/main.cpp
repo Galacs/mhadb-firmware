@@ -63,41 +63,47 @@ void init_leds() {
   FastLED.addLeds<WS2812B, PB13, GRB>(leds_B, 5);
 }
 
+DEFINE_GRADIENT_PALETTE( heatmap_gp ) {
+  0,     0,   0,  0,   //black
+128,   250,  15,  255,   //red
+255,   15,  250,  255 };
+CRGBPalette16 myPal = heatmap_gp;
+
 void update_leds(uint16_t*  values) {
   for (size_t i = 0; i < 10; i++) {
-    uint8_t brightness = map(values[i], 0, 100, 0, 255);
+    uint8_t brightness = map(values[i], 0, 100, 0, 250);
     switch (i)
     {
     case 0:
-      leds_A[4] = CRGB(0, 0, brightness);
+      leds_A[4] = ColorFromPalette(myPal, brightness);
       break;
     case 1:
-      leds_A[3] = CRGB(0, 0, brightness);
+      leds_A[3] = ColorFromPalette(myPal, brightness);
       break;
     case 2:
-      leds_A[2] = CRGB(0, 0, brightness);
+      leds_A[2] = ColorFromPalette(myPal, brightness);
       break;
     case 3:
-      leds_A[1] = CRGB(0, 0, brightness);
+      leds_A[1] = ColorFromPalette(myPal, brightness);
       break;
     case 4:
-      leds_A[0] = CRGB(0, 0, brightness);
+      leds_A[0] = ColorFromPalette(myPal, brightness);
       break;
 
     case 5:
-      leds_B[0] = CRGB(0, 0, brightness);
+      leds_B[0] = ColorFromPalette(myPal, brightness);
       break;
     case 6:
-      leds_B[1] = CRGB(0, 0, brightness);
+      leds_B[1] = ColorFromPalette(myPal, brightness);
       break;
     case 7:
-      leds_B[2] = CRGB(0, 0, brightness);
+      leds_B[2] = ColorFromPalette(myPal, brightness);
       break;
     case 8:
-      leds_B[3] = CRGB(0, 0, brightness);
+      leds_B[3] = ColorFromPalette(myPal, brightness);
       break;
     case 9:
-      leds_B[4] = CRGB(0, 0, brightness);
+      leds_B[4] = ColorFromPalette(myPal, brightness);
       break;
     }
   }
