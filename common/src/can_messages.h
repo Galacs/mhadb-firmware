@@ -17,6 +17,7 @@ enum class bldc_state_t: uint8_t {
 };
 
 enum CAN_ID {
+  BUTTON_EVENT = 90,
   BLDC_DISABLE = 100,
   BLDC_SET_SPEED = 110,
   BLDC_ALIGNMENT_START = 120,
@@ -84,6 +85,18 @@ CAN_STRUCT(t_bldc_disable, CAN_ID::BLDC_DISABLE,
 CAN_STRUCT(t_bldc_state, CAN_ID::BLDC_STATE,
   motor_id_t motor_id;
   bldc_state_t sate;
+);
+
+enum class button_id_t: uint8_t {
+  LINE_C,
+  LINE_D,
+};
+enum class button_event_kind_t: uint8_t {
+  SINGLE,
+};
+CAN_STRUCT(t_button_event, CAN_ID::BUTTON_EVENT,
+  button_id_t button_id;
+  button_event_kind_t event_type;
 );
 
 template <typename handler_t>
