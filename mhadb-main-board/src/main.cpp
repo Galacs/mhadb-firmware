@@ -4,6 +4,7 @@
 #include "Commander.h"
 #include <QuickPID.h>
 
+#define BUZZER_PIN 47
 
 float Setpoint, Input, Output;
 
@@ -38,6 +39,78 @@ enum bldc_main_t: uint8_t {
 };
 
 bldc_main_t state = RESET;
+
+struct music_score_t {
+  uint16_t freq;
+  uint16_t length;
+};
+
+static music_score_t hymn[] = {
+  { 294, 200 },
+  { 330, 200 }, { 349, 400 }, { 349, 400 }, { 330, 200 },
+  { 349, 200 }, { 294, 400 }, { 262, 200 }, { 294, 200 },
+  { 294, 200 }, { 330, 200 }, { 262, 100 }, { 0, 100 },
+  { 392, 100 }, { 349, 100 }, { 294, 200 }, { 262, 200 },
+  { 349, 400 }, { 349, 400 }, { 330, 100 }, { 330, 100 },
+  { 349, 200 }, { 294, 400 }, { 262, 200 }, { 294, 200 },
+  { 294, 200 }, { 330, 200 }, { 262, 100 }, { 0, 100 },
+  { 392, 100 }, { 349, 100 }, { 294, 200 }, { 262, 200 },
+  { 294, 400 }, { 330, 400 }, { 220, 200 }, { 220, 200 },
+  { 330, 100 }, { 330, 100 }, { 349, 100 }, { 330, 100 },
+  { 294, 100 }, { 392, 100 }, { 247, 100 }, { 294, 100 },
+  { 262, 100 }, { 349, 400 }, { 294, 400 }, { 330, 400 },
+  { 220, 200 }, { 220, 200 }, { 330, 100 }, { 330, 100 },
+  { 349, 100 }, { 330, 100 }, { 294, 100 }, { 392, 100 },
+  { 247, 100 }, { 294, 100 }, { 262, 100 }, { 349, 400 },
+  { 294, 200 }, { 330, 200 }, { 349, 400 }, { 349, 400 },
+  { 330, 200 }, { 349, 200 }, { 294, 400 }, { 262, 200 },
+  { 294, 200 }, { 294, 200 }, { 330, 200 }, { 262, 100 },
+  { 0, 100 }, { 392, 100 }, { 349, 100 }, { 294, 200 },
+  { 262, 200 }, { 349, 400 }, { 349, 400 }, { 330, 100 },
+  { 330, 100 }, { 349, 200 }, { 294, 400 }, { 262, 200 },
+  { 294, 200 }, { 294, 200 }, { 330, 200 }, { 262, 100 },
+  { 0, 100 }, { 392, 100 }, { 349, 100 }, { 294, 200 },
+  { 262, 200 }, { 294, 400 }, { 330, 400 }, { 220, 200 },
+  { 220, 200 }, { 330, 100 }, { 330, 100 }, { 349, 100 },
+  { 330, 100 }, { 294, 100 }, { 392, 100 }, { 247, 100 },
+  { 294, 100 }, { 262, 100 }, { 349, 400 }, { 294, 400 },
+  { 330, 400 }, { 220, 200 }, { 220, 200 }, { 330, 100 },
+  { 330, 100 }, { 349, 100 }, { 330, 100 }, { 294, 100 },
+  { 392, 100 }, { 247, 100 }, { 294, 100 }, { 262, 100 },
+  { 349, 400 }
+};
+
+struct music_t {
+  music_score_t* notes;
+  size_t notes_count;
+};
+
+enum buzzer_state_t {
+  IDLE,
+  PLAYING,
+};
+
+buzzer_state_t buzzer_state = buzzer_state_t::IDLE;
+
+QueueHandle_t buzzer_queue;
+void taskBuzzer(void *pvParams) {
+  music_t music;
+  for (;;) {
+    int ret = xQueueReceive(buzzer_queue, &music, portMAX_DELAY);
+    if (ret == pdPASS) {
+      buzzer_state = buzzer_state_t::PLAYING;
+      for (size_t i = 0; i < music.notes_count; i++) {
+        if (music.notes[i].freq) {
+          ledcWriteTone(BUZZER_PIN, music.notes[i].freq);
+        }
+        delay(music.notes[i].length);
+      }
+      buzzer_state = buzzer_state_t::IDLE;
+    } else if (ret == pdFALSE) {
+      Serial.println("The `Buzzer task was unable to receive data from the Queue");
+    }
+  }
+}
 
 void print_line_values(uint16_t* values) {
      for (size_t i = 0; i < 10; i++) {
@@ -303,10 +376,21 @@ void doI(char *cmd) { command.scalar(&Ki, cmd); myPID.SetTunings(Kp, Ki, Kd); }
 void doD(char *cmd) { command.scalar(&Kd, cmd); myPID.SetTunings(Kp, Ki, Kd); }
 void doR(char *cmd) { myPID.Reset(); }
 
+void doMusic(char *cmd) {
+  music_t music;
+  music.notes = hymn;
+  music.notes_count = sizeof(hymn)/sizeof(music_score_t);
+  xQueueSend(buzzer_queue, (void *)&music, 0);
+}
+
 void setup() {
   Serial.begin(115200);
   can.init((gpio_num_t)48, (gpio_num_t)34);
   // can.init((gpio_num_t)10, (gpio_num_t)9);
+
+  // Buzzer
+  xTaskCreate(taskBuzzer, "Buzzer", 2048, NULL, 2, NULL);
+  buzzer_queue = xQueueCreate(1, sizeof(music_t));
 
   Setpoint = 0;
   
@@ -326,6 +410,8 @@ void setup() {
   command.add('I', doI);
   command.add('D', doD);
   command.add('R', doR);
+
+  command.add('M', doMusic);
 
   
 
