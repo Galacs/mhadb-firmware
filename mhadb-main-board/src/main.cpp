@@ -5,6 +5,12 @@
 #include <QuickPID.h>
 
 #define BUZZER_PIN 47
+#define STARTER_PIN 33
+#define ALERT_PIN 41
+#define EMS_PIN 3
+#define RGB1_PIN 10
+#define RGB2_PIN 11
+#define CAN_ST_PIN 21
 
 float Setpoint, Input, Output;
 
