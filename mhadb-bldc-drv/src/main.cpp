@@ -35,16 +35,9 @@ TwoWire Wire2(SDA, SCL);
 // Real time FOC
 HardwareTimer* timer = new HardwareTimer(TIM2);
 
-
-enum class bldc_state_t: uint8_t {
-  RESET,
-  CALIBRATING,
-  RUNNING,
-  DISABLED,
-  EMG,
-};
-
+void change_state(bldc_state_t new_state, bool broadcast = true);
 bldc_state_t state = bldc_state_t::RESET;
+
 class BldcCanHandler
 {
   public:
@@ -71,7 +64,7 @@ class BldcCanHandler
 
   static void handle_struct(t_bldc_disable data) {
     timer->pause();
-    state = bldc_state_t::DISABLED;
+    change_state(bldc_state_t::OFF);
   }
 
   static void handle_struct(t_bldc_alignment_settings data) {
@@ -89,25 +82,22 @@ class BldcCanHandler
       motor.sensor_direction = (Direction)data.sensor_direction;
       motor_target = 0;
       motor.initFOC();
-      state = bldc_state_t::RUNNING;
+      change_state(bldc_state_t::RUNNING);
       timer->resume();
     }
   }
 
   static void handle_struct(t_bldc_alignment_start data) {
-    digitalWrite(PA15, HIGH);
-    delay(500);
-    digitalWrite(PA15, LOW);
     if (state == bldc_state_t::CALIBRATING)
       return;
     timer->pause();
-    state = bldc_state_t::CALIBRATING;
+    change_state(bldc_state_t::CALIBRATING);
     // Serial.println("aligning...");
     motor.zero_electric_angle  = NOT_SET;
     motor.sensor_direction = Direction::UNKNOWN; // CW or CCW
     motor_target = 0;
     motor.initFOC();
-    state = bldc_state_t::RUNNING;
+    change_state(bldc_state_t::RUNNING);
 
     t_bldc_alignment_settings settings_msg;
     settings_msg.align_request = settings_msg.CALIBRATED;
@@ -156,6 +146,18 @@ class BldcCanHandler
 MHADBCanController<BldcCanHandler>* BldcCanHandler::controller = nullptr;
 MHADBCanController<BldcCanHandler> can = MHADBCanController<BldcCanHandler>();
 
+void change_state(bldc_state_t new_state, bool broadcast) {
+  state = new_state;
+  t_bldc_state msg;
+  #ifdef bldc_RIGHT
+  msg.motor_id = motor_id_t::RIGHT;
+  #endif
+  #ifdef bldc_LEFT
+  msg.motor_id = motor_id_t::LEFT;
+  #endif
+  can.send_struct(msg);
+}
+
 bool a = true;
 
 struct __attribute__ ((packed)) t_motor_command   {
@@ -164,19 +166,11 @@ struct __attribute__ ((packed)) t_motor_command   {
 };
 
 void setup() {
-  pinMode(PA15, OUTPUT);
-  digitalWrite(PA15, LOW);
-  t_bldc_current_pos data {.shaft_angle=10};
-  can.send_struct(data);
-
   can.init();
-
-  data.shaft_angle = 20;
-  can.send_struct(data);
+  
+  change_state(bldc_state_t::RESET);
 
   sensor.init(&Wire2);
-  data.shaft_angle = 69;
-  can.send_struct(data);
 
   driver.voltage_power_supply = 4.1*3;
   driver.init();
@@ -189,14 +183,10 @@ void setup() {
 
   // motor.foc_modulation = FOCModulationType::SpaceVectorPWM;
 
-  // default voltage_power_supply
-  // motor.voltage_limit = 4.1*3; // Volts
-
   driver.pwm_frequency = 30000;
 
   motor.PID_velocity.P = 0.1;
   motor.PID_velocity.I = 20;
-  // motor.PID_velocity.D = 0.0001;
   motor.PID_velocity.D = 0;
   motor.PID_velocity.output_ramp = 1000;
 
@@ -206,18 +196,8 @@ void setup() {
 
   // initialize motor
   motor.init();
-  // align encoder and start FOC
-  // motor.zero_electric_angle  = 4.36f; // rad
-  // motor.sensor_direction = Direction::CCW; // CW or CCW
   motor.voltage_sensor_align = 10.0f;
 
-  // state = bldc_state_t::CALIBRATING;
-  // motor.initFOC();
-  // state = bldc_state_t::RUNNING;
-
-  // t_bldc_alignment_settings results;
-  // BldcCanHandler::update_struct(&results);
-  // can.send_struct(results);
 
   motor.target = 0; //initial target velocity 1 rad/s
 
@@ -244,9 +224,10 @@ void setup() {
   can_timer->resume();
   can.send_rtr(BLDC_ALIGNMENT_SETTINGS);
 }
+
 int last = 0;
 void loop() {
-  if (millis() > last + 2000 && state == bldc_state_t::RESET) {
+  if (millis() > last + 1000 && state == bldc_state_t::RESET) {
     last = millis();
     can.send_rtr(BLDC_ALIGNMENT_SETTINGS);
   }

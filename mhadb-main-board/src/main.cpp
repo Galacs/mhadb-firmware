@@ -88,6 +88,12 @@ class MainCanHandler
   static void setController(MHADBCanController<MainCanHandler>* ctrl) {
     controller = ctrl;
   }
+  
+  static void handle_struct(t_bldc_state data) {
+    const static char motors[] = {'R', 'L'};
+    const static String states[] = {"Reset", "Calibrating", "Running", "Off", "EMG"};
+    Serial.printf("%c: %s\n", motors[data.motor_id], states[(char)data.sate]);
+  }
 
   static void handle_struct(t_bldc_current_pos data) {
     // Serial.printf("Line pos: %d\n", data.shaft_angle);

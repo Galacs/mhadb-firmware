@@ -8,6 +8,13 @@
 // - Create the can message struct using the CAN_STRUCT(struct_name, can, fields...)
 // - Add the correct case macro to handle_can()'s switch
 
+enum class bldc_state_t: uint8_t {
+  RESET,
+  CALIBRATING,
+  RUNNING,
+  OFF,
+  EMG,
+};
 
 enum CAN_ID {
   BLDC_DISABLE = 100,
@@ -18,9 +25,10 @@ enum CAN_ID {
   BLDC_ALIGNMENT_SETTINGS = 150,
   LINE_SENSOR_DATA = 160,
   LINE_RAW_SENSOR_DATA = 170,
+  BLDC_STATE = 180,
 };
 
-enum motor_id_t: int8_t {
+enum motor_id_t: uint8_t {
   RIGHT,
   LEFT,
 };
@@ -66,6 +74,11 @@ CAN_STRUCT(t_bldc_set_speed, CAN_ID::BLDC_SET_SPEED,
 
 CAN_STRUCT(t_bldc_disable, CAN_ID::BLDC_DISABLE,
   motor_id_t motor_id;
+);
+
+CAN_STRUCT(t_bldc_state, CAN_ID::BLDC_STATE,
+  motor_id_t motor_id;
+  bldc_state_t sate;
 );
 
 template <typename handler_t>
