@@ -165,10 +165,10 @@ CanController<MHADBCanController<MainCanHandler>> can;
 void doStartAlign(char *cmd) {
   // command.scalar(&debugValue, cmd);
   // Serial.println(debugValue);
-  // Serial.println("test");
   t_bldc_alignment_start msg;
   msg.motor_id = motor_id_t::LEFT; // not used by bldc 
   can.send_struct(msg);
+  Serial.println("Sent Start align");
   // can.send_rtr(BLDC_ALIGNMENT_SETTINGS);
 }
 
@@ -185,6 +185,7 @@ void doFollow(char *cmd) {
 void doDisableBLDC(char *cmd) {
   t_bldc_disable data;
   can.send_struct(data);
+  Serial.println("disabled motors");
 }
 
 void doDebug(char *cmd) {
@@ -217,7 +218,7 @@ void doSendAlign(char *cmd) {
   left.zero_electric_angle = p_motor_left_zero;
   left.sensor_direction = p_motor_left_direction;
   can.send_struct(left);
-  Serial.println("sent saved settings");
+  Serial.println("sent saved align settings");
 }
 
 // Temp test function
