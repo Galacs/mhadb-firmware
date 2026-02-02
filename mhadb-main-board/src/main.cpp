@@ -188,6 +188,25 @@ void commetuveux(float speed, float direction){
   can.send_struct(data);
 }
 
+void doSendAlign(char *cmd) {
+  // command.scalar(&debugValue, cmd);
+  // Serial.println(debugValue);
+  t_bldc_alignment_settings right;
+  right.align_request = right.STORED;
+  right.motor_id = motor_id_t::RIGHT;
+  right.zero_electric_angle = p_motor_right_zero;
+  right.sensor_direction = p_motor_right_direction;
+  can.send_struct(right);
+
+  t_bldc_alignment_settings left;
+  left.align_request = left.STORED;
+  left.motor_id = motor_id_t::LEFT;
+  left.zero_electric_angle = p_motor_left_zero;
+  left.sensor_direction = p_motor_left_direction;
+  can.send_struct(left);
+  Serial.println("sent saved align settings");
+}
+
 void doFollow(char *cmd) {
   if (state == FOLLOWING) {
     Serial.println("now stop....");
@@ -195,6 +214,7 @@ void doFollow(char *cmd) {
     state = RESET;
   } else {
     Serial.println("now following....");
+    doSendAlign(nullptr);
     state = FOLLOWING;
   }
 }
@@ -219,24 +239,6 @@ void doDebug(char *cmd) {
   };
 }
 
-void doSendAlign(char *cmd) {
-  // command.scalar(&debugValue, cmd);
-  // Serial.println(debugValue);
-  t_bldc_alignment_settings right;
-  right.align_request = right.STORED;
-  right.motor_id = motor_id_t::RIGHT;
-  right.zero_electric_angle = p_motor_right_zero;
-  right.sensor_direction = p_motor_right_direction;
-  can.send_struct(right);
-
-  t_bldc_alignment_settings left;
-  left.align_request = left.STORED;
-  left.motor_id = motor_id_t::LEFT;
-  left.zero_electric_angle = p_motor_left_zero;
-  left.sensor_direction = p_motor_left_direction;
-  can.send_struct(left);
-  Serial.println("sent saved align settings");
-}
 
 // Temp test function
 void forward(float speed) {
@@ -257,6 +259,7 @@ void doSendForward(char *cmd) {
 }
 
 
+unsigned long last_pid_print = 0;
 void following() {
   // if (state == FOLLOWING) {
   //   Serial.println(line);
@@ -270,7 +273,9 @@ void following() {
   //   commetuveux(speed, direction);
   // }
  if (state == FOLLOWING) {
-  Serial.printf("line: %f, sortie: %f\n", Input*20, Output);
+    if (elapsed(&last_pid_print, 200)) {
+      Serial.printf("line: %f, sortie: %f\n", Input*20, Output);
+    }
   commetuveux(speed, -Output);
  }
 }
