@@ -43,6 +43,8 @@ int sensors[] = {LS0, LS1, LS2, LS3, LS4, LS5, LS6, LS7, LS8, LS9 };
 uint16_t raw_values[10] = {0};
 uint16_t mapped_values[10] = {0};
 
+line_pos_state_t line_state = line_pos_state_t::LOST;
+
 CRGB leds_A[5];
 CRGB leds_B[5];
 
@@ -251,6 +253,16 @@ int16_t get_line_position(uint16_t* values) {
   }
   moy_pon = (total*100)/sum;
 
+  int a = 0;
+  for (int i = 0; i < 10; i++) {
+    a += mapped_values[i];
+  }
+  if (a < 50) {
+    line_state = line_pos_state_t::LOST;
+  } else {
+    line_state = line_pos_state_t::DETECTED;
+  }
+
   return moy_pon; 
 }
 
@@ -259,7 +271,7 @@ void update_can() {
   //   t_line_sensor_raw_data msg_content = {i, values[i]};
   //   Can.send_struct(msg_content);
   // }
-  t_line_sensor_data msg_content { .line_pos=get_line_position(mapped_values) };
+  t_line_sensor_data msg_content { .line_pos=get_line_position(mapped_values), .state=line_state };
   // Serial.printf("can to be line pos: %d\n", msg_content.line_pos);
   can.send_struct(msg_content);
   for (size_t i = 0; i < 10; i++) {

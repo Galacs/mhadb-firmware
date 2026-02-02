@@ -57,6 +57,7 @@ float p_motor_right_zero;
 int8_t p_motor_right_direction;
 
 int16_t line = 0;
+line_pos_state_t line_state = line_pos_state_t::LOST;
 
 void init_settings() {
   prefs.begin("mainPrefs");
@@ -156,6 +157,7 @@ class MainCanHandler
       Serial.printf("Line pos: %d\n", data.line_pos);
     }
     line = data.line_pos;
+    line_state = data.state;
   }
   
 
