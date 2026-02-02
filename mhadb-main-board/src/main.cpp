@@ -7,7 +7,7 @@
 
 float Setpoint, Input, Output;
 
-float Kp = 15, Ki = 0, Kd = 0;
+float Kp = 25, Ki = 10, Kd = 50;
 
 QuickPID myPID(&Input, &Output, &Setpoint);
 
@@ -172,9 +172,26 @@ void doStartAlign(char *cmd) {
   // can.send_rtr(BLDC_ALIGNMENT_SETTINGS);
 }
 
+float speed = 0;
+float direction = 0;
+
+void commetuveux(float speed, float direction){
+  float coef=5;
+
+  float puissance_rotation = direction * coef;
+  t_bldc_set_speed data;
+  data.motor_id = motor_id_t::LEFT;
+  data.speed = speed + puissance_rotation;
+  can.send_struct(data);
+  data.motor_id = motor_id_t::RIGHT;
+  data.speed = speed - puissance_rotation;
+  can.send_struct(data);
+}
+
 void doFollow(char *cmd) {
   if (state == FOLLOWING) {
     Serial.println("now stop....");
+    commetuveux(0, 0);
     state = RESET;
   } else {
     Serial.println("now following....");
@@ -239,21 +256,6 @@ void doSendForward(char *cmd) {
   forward(target);
 }
 
-float speed = 0;
-float direction = 0;
-
-void commetuveux(float speed, float direction){
-  float coef=5;
-  
-  float puissance_rotation = direction * coef;
-  t_bldc_set_speed data;
-  data.motor_id = motor_id_t::LEFT;
-  data.speed = speed + puissance_rotation;
-  can.send_struct(data);
-  data.motor_id = motor_id_t::RIGHT;
-  data.speed = speed - puissance_rotation;
-  can.send_struct(data);
-}
 
 void following() {
   // if (state == FOLLOWING) {
