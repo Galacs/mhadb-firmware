@@ -264,6 +264,7 @@ int16_t get_line_position(uint16_t* values) {
     if (line_state == line_pos_state_t::DETECTED) {
       if (!lost_time) {
         lost_time = millis();
+        line_state = line_pos_state_t::LOSTING;
       }
       if ((lost_time + 2000) < millis()) {
         line_state = line_pos_state_t::LOST;
