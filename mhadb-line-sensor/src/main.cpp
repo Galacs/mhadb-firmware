@@ -248,8 +248,8 @@ int16_t get_line_position(uint16_t* values) {
     // values[i] = 100 - values[i];
     // if (values[i] < 900)
     //   values[i] = 0;
-    total+=weights[i]*(mapped_values[i]);
-    sum+=(mapped_values[i]);
+    total+=weights[i]*(mapped_values[i]/10);
+    sum+=(mapped_values[i]/10);
   }
   moy_pon = (total*100)/sum;
 
@@ -275,7 +275,7 @@ void update_can() {
   // Serial.printf("can to be line pos: %d\n", msg_content.line_pos);
   can.send_struct(msg_content);
   for (size_t i = 0; i < 10; i++) {
-    t_line_sensor_raw_data data {.sensor_id=i, .mapped_value=mapped_values[i], .raw_value=raw_values[i]};
+    t_line_sensor_raw_data data {.sensor_id=i, .mapped_value=mapped_values[i]/10, .raw_value=raw_values[i]/10};
     can.send_struct(data);
   }
 }
@@ -322,12 +322,18 @@ void setup() {
 
 }
 
+int oversampling = 0;
+
 void loop() {
   update_line_sensors(sensors);
-  // print_line_values(line_sensors);
-  update_can();
-  update_leds();
-  // can.handle_can();
-  delay(50);
-  // can.send_rtr(CAN_ID::BLDC_ALIGNMENT_RESULTS);
+  if (oversampling == 10 ) {
+    oversampling = 0;
+    // print_line_values(line_sensors);
+    update_can();
+    update_leds();
+    // can.handle_can();
+    delay(5);
+    // can.send_rtr(CAN_ID::BLDC_ALIGNMENT_RESULTS);
+  }
+  oversampling++;
 }
