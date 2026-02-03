@@ -14,7 +14,7 @@
 
 float Setpoint, Input, Output;
 
-float Kp = 25, Ki = 10, Kd = 50;
+float Kp = 15, Ki = 10, Kd = 0;
 
 QuickPID myPID(&Input, &Output, &Setpoint);
 
@@ -238,6 +238,7 @@ class MainCanHandler
     }
     line = data.line_pos;
     line_state = data.state;
+    //if (line_state == line_pos_state_t::LOSTING) Serial.println("ligne perdue");
   }
   
 
@@ -362,7 +363,7 @@ void following() {
   // }
  if (state == FOLLOWING) {
     if (elapsed(&last_pid_print, 200)) {
-      Serial.printf("line: %f, sortie: %f\n", Input*20, Output);
+      //Serial.printf("line: %f, sortie: %f\n", Input*20, Output);
     }
     if (line_state == line_pos_state_t::NO_LINE) {
       myPID.Reset();
@@ -370,7 +371,19 @@ void following() {
       direction = 0;
       commetuveux(speed, direction);
     }
-  commetuveux(speed, -Output);
+  //commetuveux(speed, -Output);
+  //if (line_state == line_pos_state_t::LOST) Serial.print("ligne perdu\n");
+  //if (abs(line) > 1400 && abs(line) < 2400) commetuveux(speed/5, -Output);
+  //else if (abs(line) >= 2400) commetuveux(speed/10, -Output);
+  //else commetuveux(speed, -Output);
+  if (line_state == line_pos_state_t::LOSTING) {
+    commetuveux(speed/8, -Output);
+    //Serial.print("ligne perdu\n");
+    //Serial.printf("line: %f, sortie: %f\n", Input*20, Output);
+  }
+  else commetuveux(speed, -Output);
+  //Serial.print("Speed ");
+  //Serial.println(speed);
  }
 }
 
@@ -441,7 +454,7 @@ void setup() {
   myPID.SetSampleTimeUs(1000);
 
   // Play boot sound
-  doMusic(NULL);
+  //doMusic(NULL);
 }
 
 bool done = false;
