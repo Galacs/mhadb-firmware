@@ -24,7 +24,7 @@
 #define LS9 PB1
 
 
-#define LINE_TRESH 900
+#define LINE_TRESH 850
 
 
 class LineCanHandler {
