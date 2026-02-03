@@ -258,14 +258,14 @@ int16_t get_line_position(uint16_t* values) {
 
   int a = 0;
   for (int i = 0; i < 10; i++) {
-    a += mapped_values[i];
+    a += mapped_values[i]/10;
   }
-  if (a < 50) {
-    if (line_state == line_pos_state_t::DETECTED) {
-      if (!lost_time) {
-        lost_time = millis();
-        line_state = line_pos_state_t::LOSTING;
-      }
+  if (a < 20) {
+    if (!lost_time) {
+      lost_time = millis();
+      line_state = line_pos_state_t::LOSTING;
+    }
+    if (line_state == line_pos_state_t::LOSTING) {
       if ((lost_time + 2000) < millis()) {
         line_state = line_pos_state_t::LOST;
         pos_before_lost = 0;
@@ -275,6 +275,12 @@ int16_t get_line_position(uint16_t* values) {
       return pos_before_lost;
     }
     line_state = line_pos_state_t::NO_LINE;
+  } else if (a > 400) {
+    if (moy_pon > 0) {
+      moy_pon += 2000;
+    } else {
+      moy_pon -= 2000;
+    }
   } else {
     line_state = line_pos_state_t::DETECTED;
     lost_time = 0;
