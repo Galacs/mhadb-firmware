@@ -155,6 +155,7 @@ void change_state(bldc_state_t new_state, bool broadcast) {
   #ifdef bldc_LEFT
   msg.motor_id = motor_id_t::LEFT;
   #endif
+  msg.sate = state;
   can.send_struct(msg);
 }
 
