@@ -238,7 +238,7 @@ class MainCanHandler
     }
     line = data.line_pos;
     line_state = data.state;
-    //if (line_state == line_pos_state_t::LOSTING) Serial.println("ligne perdue");
+    if (line_state == line_pos_state_t::T) Serial.println("T junction");
   }
   
 

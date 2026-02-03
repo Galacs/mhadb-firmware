@@ -135,6 +135,10 @@ void print_line_values(uint16_t* values) {
 int16_t pos_before_lost = 0;
 unsigned long lost_time = 0;
 int last_side = 1;
+bool is_full = false;
+unsigned long last_full = 0;
+unsigned long t_start = 0;
+unsigned long nine_start = 0;
 
 int16_t get_line_position(uint16_t* values) {
   // fonction 1 rémi
@@ -264,11 +268,23 @@ int16_t get_line_position(uint16_t* values) {
     last_side = 1;
   }
 
+  if (line_state == line_pos_state_t::T && millis() < t_start + 300) {
+    return 4400;
+  } else {
+    t_start = 0;
+  }
+
   int a = 0;
   for (int i = 0; i < 10; i++) {
     a += mapped_values[i]/10;
   }
   if (a < 20) {
+    if ((line_state == line_pos_state_t::FULL || is_full) && millis() > last_full + 400) {
+      line_state = line_pos_state_t::T;
+      is_full = false;
+      t_start = millis();
+      return 4400;
+    }
     if (!lost_time) {
       lost_time = millis();
       line_state = line_pos_state_t::LOSTING;
@@ -292,7 +308,7 @@ int16_t get_line_position(uint16_t* values) {
       } 
     }
     line_state = line_pos_state_t::NO_LINE;
-  } else if (a > 400) {
+  } else if (a > 300) {
     if (moy_pon > 0) {
       moy_pon += 2000;
     } else {
@@ -301,7 +317,16 @@ int16_t get_line_position(uint16_t* values) {
   } else {
     line_state = line_pos_state_t::DETECTED;
     lost_time = 0;
+    last_full = 0;
   }
+
+  // T junction detection
+  if (a > 500) {
+    line_state = line_pos_state_t::FULL;
+    is_full = true;
+    last_full = millis();
+  }
+  // 
 
   pos_before_lost = moy_pon;
   return moy_pon; 

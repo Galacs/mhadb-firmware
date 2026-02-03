@@ -45,6 +45,9 @@ enum class line_pos_state_t : uint8_t {
   LOST,
   NO_LINE,
   LOSTING,
+  T,
+  FULL,
+  TURN,
 };
 CAN_STRUCT(t_line_sensor_data, CAN_ID::LINE_SENSOR_DATA,
   int16_t line_pos;
