@@ -12,7 +12,7 @@
 #define ESPNOW_WIFI_MODE WIFI_STA  // WiFi Mode
 #define ESPNOW_WIFI_IF WIFI_IF_STA // WiFi Interface
 
-const MacAddress peer_mac({0xF4, 0x12, 0xFA, 0x40, 0x64, 0x4C});
+const MacAddress peer_mac({0x20, 0x6E, 0xF1, 0x9E, 0xAD, 0xBC});
 
 ESP_NOW_Serial_Class NowSerial(peer_mac, ESPNOW_WIFI_CHANNEL, ESPNOW_WIFI_IF);
 

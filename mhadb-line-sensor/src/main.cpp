@@ -407,12 +407,12 @@ void loop() {
     update_can();
     update_leds();
     // can.handle_can();
-    delay(5);
     // can.send_rtr(CAN_ID::BLDC_ALIGNMENT_RESULTS);
     for (size_t i = 0; i < 10; i++) {
       raw_values[i] = 0;
       mapped_values[i] = 0;
     }
   }
+  delay(5);
   oversampling++;
 }

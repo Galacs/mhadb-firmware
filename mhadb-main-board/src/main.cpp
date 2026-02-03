@@ -42,6 +42,7 @@ unsigned long last_debug_line_pos = 0;
 
 const MacAddress peer_mac({0x50, 0x78, 0x7D, 0x18, 0x74, 0x44});
 ESP_NOW_Serial_Class NowSerial(peer_mac, ESPNOW_WIFI_CHANNEL, ESPNOW_WIFI_IF);
+#define Serial NowSerial
 
 bool elapsed(unsigned long* last_run, unsigned long time) {
   if (millis() > *last_run + time) {
@@ -122,11 +123,11 @@ void taskBuzzer(void *pvParams) {
       buzzer_state = buzzer_state_t::PLAYING;
       for (size_t i = 0; i < music.notes_count; i++) {
         if (music.notes[i].freq) {
-          ledcWriteTone(0, music.notes[i].freq);
+          ledcWriteTone(BUZZER_PIN, music.notes[i].freq);
         }
         delay(music.notes[i].length / music.speed);
       }
-      ledcWrite(0, 0);
+      ledcWrite(BUZZER_PIN, 0);
       buzzer_state = buzzer_state_t::IDLE;
     } else if (ret == pdFALSE) {
       Serial.println("The `Buzzer task was unable to receive data from the Queue");
@@ -447,10 +448,9 @@ void setup() {
       "You can now send data to the peer device using the Serial Monitor.\n");
 
   // Buzzer
-  ledcSetup(0, 4000, 13);
-  ledcAttachPin(BUZZER_PIN, 0);
-  xTaskCreate(taskBuzzer, "Buzzer", 2048, NULL, 2, NULL);
+  ledcAttach(BUZZER_PIN, 4000, 13);
   buzzer_queue = xQueueCreate(1, sizeof(music_t));
+  xTaskCreate(taskBuzzer, "Buzzer", 2048, NULL, 2, NULL);
 
   Setpoint = 0;
   
