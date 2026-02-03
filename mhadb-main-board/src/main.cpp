@@ -4,6 +4,11 @@
 #include "Commander.h"
 #include <QuickPID.h>
 
+#include "ESP32_NOW_Serial.h"
+#include "MacAddress.h"
+#include "WiFi.h"
+#include "esp_wifi.h"
+
 #define BUZZER_PIN 47
 #define STARTER_PIN 33
 #define ALERT_PIN 41
@@ -27,6 +32,16 @@ bool line_pos_debug = false;
 unsigned long last_debug_line_raw = 0;
 unsigned long last_debug_line = 0;
 unsigned long last_debug_line_pos = 0;
+
+// ESP NOW
+// Channel to be used by the ESP-NOW protocol
+#define ESPNOW_WIFI_CHANNEL 5
+
+#define ESPNOW_WIFI_MODE WIFI_STA  // WiFi Mode
+#define ESPNOW_WIFI_IF WIFI_IF_STA // WiFi Interface
+
+const MacAddress peer_mac({0x50, 0x78, 0x7D, 0x18, 0x74, 0x44});
+ESP_NOW_Serial_Class NowSerial(peer_mac, ESPNOW_WIFI_CHANNEL, ESPNOW_WIFI_IF);
 
 bool elapsed(unsigned long* last_run, unsigned long time) {
   if (millis() > *last_run + time) {
@@ -415,6 +430,21 @@ void setup() {
   Serial.begin(115200);
   can.init((gpio_num_t)48, (gpio_num_t)34);
   // can.init((gpio_num_t)10, (gpio_num_t)9);
+  
+
+  WiFi.mode(ESPNOW_WIFI_MODE);
+  WiFi.setChannel(ESPNOW_WIFI_CHANNEL, WIFI_SECOND_CHAN_NONE);
+  while (!WiFi.STA.started()) {
+    delay(100);
+  }
+  Serial.print("MAC Address: ");
+  Serial.println(WiFi.macAddress());
+  Serial.println("ESP-NOW communication starting...");
+  NowSerial.begin(115200);
+  Serial.printf("ESP-NOW version: %d, max data length: %d\n",
+                ESP_NOW.getVersion(), ESP_NOW.getMaxDataLen());
+  Serial.println(
+      "You can now send data to the peer device using the Serial Monitor.\n");
 
   // Buzzer
   ledcSetup(0, 4000, 13);
