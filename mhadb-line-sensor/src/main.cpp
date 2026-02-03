@@ -261,20 +261,22 @@ int16_t get_line_position(uint16_t* values) {
     a += mapped_values[i];
   }
   if (a < 50) {
-    if (lost_time + 2000 < millis()) { // If more than 2s since last line lost
-      lost_time = millis(); // Lost now
-    }
     if (line_state == line_pos_state_t::DETECTED) {
-        if (lost_time + 1000 < millis()) { 
-          line_state = line_pos_state_t::LOST;
-          pos_before_lost = 0;
-          return 0;
-        }
-        return pos_before_lost;
+      if (!lost_time) {
+        lost_time = millis();
+      }
+      if ((lost_time + 2000) < millis()) {
+        line_state = line_pos_state_t::LOST;
+        pos_before_lost = 0;
+        lost_time = 0;
+        return 0;
+      }
+      return pos_before_lost;
     }
     line_state = line_pos_state_t::NO_LINE;
   } else {
     line_state = line_pos_state_t::DETECTED;
+    lost_time = 0;
   }
 
   pos_before_lost = moy_pon;
