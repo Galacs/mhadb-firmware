@@ -378,9 +378,9 @@ void doDirection(char *cmd) {
   commetuveux(speed, direction);
 }
 
-void doP(char *cmd) { command.scalar(&Kp, cmd); myPID.SetTunings(Kp, Ki, Kd); }
-void doI(char *cmd) { command.scalar(&Ki, cmd); myPID.SetTunings(Kp, Ki, Kd); }
-void doD(char *cmd) { command.scalar(&Kd, cmd); myPID.SetTunings(Kp, Ki, Kd); }
+void doP(char *cmd) { command.scalar(&Kp, cmd); myPID.SetTunings(Kp, Ki, Kd); myPID.Reset(); }
+void doI(char *cmd) { command.scalar(&Ki, cmd); myPID.SetTunings(Kp, Ki, Kd); myPID.Reset(); }
+void doD(char *cmd) { command.scalar(&Kd, cmd); myPID.SetTunings(Kp, Ki, Kd); myPID.Reset(); }
 void doR(char *cmd) { myPID.Reset(); }
 
 void doMusic(char *cmd) {
