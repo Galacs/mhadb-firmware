@@ -266,6 +266,7 @@ float direction = 0;
 
 void commetuveux(float speed, float direction){
   float coef=5;
+  // Serial.printf("Speed: %f\n" ,speed);
 
   float puissance_rotation = direction * coef;
   t_bldc_set_speed data;
@@ -377,11 +378,11 @@ void following() {
   //else if (abs(line) >= 2400) commetuveux(speed/10, -Output);
   //else commetuveux(speed, -Output);
   if (line_state == line_pos_state_t::LOSTING) {
-    commetuveux(speed/8, -Output);
+    commetuveux(speed/2, -Output);
     //Serial.print("ligne perdu\n");
     //Serial.printf("line: %f, sortie: %f\n", Input*20, Output);
-  }
-  else commetuveux(speed, -Output);
+  } else commetuveux(speed*(1-abs(line)/4200), -Output);
+  // else commetuveux(speed, -Output);
   //Serial.print("Speed ");
   //Serial.println(speed);
  }

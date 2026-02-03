@@ -134,6 +134,7 @@ void print_line_values(uint16_t* values) {
 
 int16_t pos_before_lost = 0;
 unsigned long lost_time = 0;
+int last_side = 1;
 
 int16_t get_line_position(uint16_t* values) {
   // fonction 1 rémi
@@ -255,6 +256,13 @@ int16_t get_line_position(uint16_t* values) {
     sum+=(mapped_values[i]/10);
   }
   moy_pon = (total*100)/sum;
+  
+  // Set last side
+  if (mapped_values[0] > 30) {
+    last_side = -1;
+  } else if (mapped_values[9] > 30) {
+    last_side = 1;
+  }
 
   int a = 0;
   for (int i = 0; i < 10; i++) {
@@ -272,7 +280,16 @@ int16_t get_line_position(uint16_t* values) {
         lost_time = 0;
         return 0;
       }
-      return pos_before_lost;
+      // if (pos_before_lost > 0) {
+      //   return 4400; {}
+      // } else {
+      //   return -4400;
+      // } 
+      if (last_side == 1) {
+        return 4400;
+      } else if (last_side == -1) {
+        return -4400;
+      } 
     }
     line_state = line_pos_state_t::NO_LINE;
   } else if (a > 400) {
