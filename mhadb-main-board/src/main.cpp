@@ -386,7 +386,7 @@ void doR(char *cmd) { myPID.Reset(); }
 void doMusic(char *cmd) {
   music_t music;
   music.notes = hymn;
-  music.speed = 1.417;
+  music.speed = 170/120;
   music.notes_count = sizeof(hymn)/sizeof(music_score_t);
   xQueueSend(buzzer_queue, (void *)&music, 0);
 }
