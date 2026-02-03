@@ -273,6 +273,11 @@ int16_t get_line_position(uint16_t* values) {
   } else {
     t_start = 0;
   }
+  if (line_state == line_pos_state_t::TURN && millis() < nine_start + 300) {
+    return last_side*4400;
+  } else {
+    nine_start = 0;
+  }
 
   int a = 0;
   for (int i = 0; i < 10; i++) {
@@ -325,8 +330,12 @@ int16_t get_line_position(uint16_t* values) {
     line_state = line_pos_state_t::FULL;
     is_full = true;
     last_full = millis();
+  } else 
+  if (values[0] + values[1] + values[2] + values[3] + values[4] > 5*50) {
+    line_state = line_pos_state_t::TURN;
+  } else if (values[5] + values[6] + values[7] + values[8] + values[9] > 5*50) {
+    line_state = line_pos_state_t::TURN;
   }
-  // 
 
   pos_before_lost = moy_pon;
   return moy_pon; 
