@@ -43,6 +43,7 @@ CAN_STRUCT(t_line_sensor_raw_data, CAN_ID::LINE_RAW_SENSOR_DATA,
 enum class line_pos_state_t : uint8_t {
   DETECTED,
   LOST,
+  NO_LINE,
 };
 CAN_STRUCT(t_line_sensor_data, CAN_ID::LINE_SENSOR_DATA,
   int16_t line_pos;

@@ -258,7 +258,7 @@ int16_t get_line_position(uint16_t* values) {
     a += mapped_values[i];
   }
   if (a < 50) {
-    line_state = line_pos_state_t::LOST;
+    line_state = line_pos_state_t::NO_LINE;
   } else {
     line_state = line_pos_state_t::DETECTED;
   }

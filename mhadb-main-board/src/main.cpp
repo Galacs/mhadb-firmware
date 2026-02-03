@@ -364,6 +364,12 @@ void following() {
     if (elapsed(&last_pid_print, 200)) {
       Serial.printf("line: %f, sortie: %f\n", Input*20, Output);
     }
+    if (line_state == line_pos_state_t::NO_LINE) {
+      myPID.Reset();
+      speed = 0;
+      direction = 0;
+      commetuveux(speed, direction);
+    }
   commetuveux(speed, -Output);
  }
 }
