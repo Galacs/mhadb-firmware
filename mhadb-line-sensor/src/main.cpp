@@ -112,9 +112,10 @@ void update_line_sensors(int* sensors) {
     // if (val<500) val=500;
     // values[i] = map(val, 500, 1024, 0, 100);
     //#endif
-    raw_values[i]= analogRead(sensors[i]);
-    mapped_values[i] = constrain(raw_values[i], LINE_TRESH, 1050);
-    mapped_values[i] = map(mapped_values[i], LINE_TRESH, 1050, 0, 100);
+    uint16_t a = analogRead(sensors[i]);
+    raw_values[i] = raw_values[i] + a;
+    a = constrain(a, LINE_TRESH, 1030);
+    mapped_values[i] = mapped_values[i] + map(a, LINE_TRESH, 1030, 0, 100);
     // if (i == 3 /*|| i == 4*/ || i == 5) {
     //   values[i] = analogRead(sensors[i]);
     // } else {
@@ -131,6 +132,8 @@ void print_line_values(uint16_t* values) {
      Serial.println("");
 }
 
+int16_t pos_before_lost = 0;
+unsigned long lost_time = 0;
 
 int16_t get_line_position(uint16_t* values) {
   // fonction 1 rémi
@@ -258,11 +261,23 @@ int16_t get_line_position(uint16_t* values) {
     a += mapped_values[i];
   }
   if (a < 50) {
+    if (lost_time + 2000 < millis()) { // If more than 2s since last line lost
+      lost_time = millis(); // Lost now
+    }
+    if (line_state == line_pos_state_t::DETECTED) {
+        if (lost_time + 1000 < millis()) { 
+          line_state = line_pos_state_t::LOST;
+          pos_before_lost = 0;
+          return 0;
+        }
+        return pos_before_lost;
+    }
     line_state = line_pos_state_t::NO_LINE;
   } else {
     line_state = line_pos_state_t::DETECTED;
   }
 
+  pos_before_lost = moy_pon;
   return moy_pon; 
 }
 
@@ -334,6 +349,10 @@ void loop() {
     // can.handle_can();
     delay(5);
     // can.send_rtr(CAN_ID::BLDC_ALIGNMENT_RESULTS);
+    for (size_t i = 0; i < 10; i++) {
+      raw_values[i] = 0;
+      mapped_values[i] = 0;
+    }
   }
   oversampling++;
 }
