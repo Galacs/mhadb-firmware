@@ -22,10 +22,10 @@ float Setpoint, Input, Output, speed = 0, speed_Output, speed_Input = 0;
 
 float Kp = 15, Ki = 10, Kd = 0;
 
-float current_speed = 0;
+float current_speed = 0, speed_setpoint;
 
 QuickPID myPID(&Input, &Output, &Setpoint);
-QuickPID speedPID(&current_speed, &speed_Output, &speed);
+QuickPID speedPID(&current_speed, &speed_Output, &speed_setpoint);
 
 uint16_t line_sensors_mapped[10] = {0};
 uint16_t line_sensors_raw[10] = {0};
@@ -327,6 +327,7 @@ void doSendAlign(char *cmd) {
   left.sensor_direction = p_motor_left_direction;
   can.send_struct(left);
   Serial.println("sent saved align settings");
+  state = bldc_main_t::RESET;
 }
 
 void doFollow(char *cmd) {
@@ -365,9 +366,11 @@ void doDebug(char *cmd) {
 
 unsigned long ems_time = 0;
 void handleEMSTap(Button2& b) {
-  if (!state == bldc_main_t::EMG) {
+  if (state != bldc_main_t::EMG) {
     ems_time = millis();
     state = bldc_main_t::EMG;
+    Serial.println("going into emergency");
+    commetuveux(0, 0);
     for (size_t i = 0; i < 5; i++) {
       doDisableBLDC(NULL);
     }
@@ -375,6 +378,7 @@ void handleEMSTap(Button2& b) {
 }
 
 void handleEMSLongTap(Button2& b) {
+  Serial.println("Long");
   if (elapsed(&ems_time, 1000)) {
     doSendAlign(NULL);
     if (!starter_btn.isPressed()) {
@@ -383,6 +387,7 @@ void handleEMSLongTap(Button2& b) {
       music.speed = 1;
       music.notes_count = sizeof(armed_error)/sizeof(music_score_t);
       xQueueSend(buzzer_queue, (void *)&music, 0);
+      Serial.println("Armed");
       return;
     }
     state = bldc_main_t::ARMED;
@@ -446,12 +451,30 @@ void following() {
   //else commetuveux(speed, -Output);
   current_speed += speed_Output;
   if (line_state == line_pos_state_t::LOSTING) {
-    commetuveux(speed_Output/2, -Output);
+    // commetuveux(speed_Output/2, -Output);
+    speed_setpoint = speed/2;
+    // Serial.print("PID Speed slwoowow: ");
+    // Serial.print(current_speed);
+    // Serial.print("    ");
+    // Serial.print(speed_setpoint);
+    // Serial.print("    ");
+    // Serial.println(Output);
     //Serial.print("ligne perdu\n");
     //Serial.printf("line: %f, sortie: %f\n", Input*20, Output);
-  } else commetuveux(current_speed*(1-abs(line)/4200), -Output);
-  Serial.print("PID Speed: ");
-  Serial.println(speed_Output);
+    commetuveux(current_speed, -Output);
+  } else {
+    speed_setpoint = speed*(1-abs(line)/4200);
+    commetuveux(current_speed, -Output);
+    // Serial.print("PID Speed: ");
+    // Serial.print(current_speed);
+    // Serial.print("    ");
+    // Serial.print(speed_setpoint);
+    // Serial.print("    ");
+    // Serial.println(Output);
+  };
+  // } else commetuveux(0, -Output);
+  
+  // commetuveux(current_speed, -Output);
   // else commetuveux(speed, -Output);
   //Serial.print("Speed ");
   //Serial.println(speed);
@@ -548,7 +571,7 @@ void setup() {
   myPID.SetMode((uint8_t) Control::automatic);
   speedPID.SetMode((uint8_t) Control::automatic);
   myPID.SetOutputLimits(-1, 1);
-  speedPID.SetOutputLimits(0, 1);
+  speedPID.SetOutputLimits(-1, 1);
 
   myPID.SetSampleTimeUs(1000);
   speedPID.SetSampleTimeUs(1000);
