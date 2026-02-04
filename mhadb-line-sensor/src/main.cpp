@@ -187,6 +187,8 @@ void print_line_values(uint16_t* values) {
 // unsigned long last_detected = 0;
 int last_side = 0;
 unsigned long losing_start = 0;
+unsigned long last_full = 0;
+unsigned long t_start = 0;
 
 int16_t get_line_position(uint16_t* values) {
   const int8_t weights[] = {-44, -34, -24, -14, -4, 4, 14, 24, 34, 44};
@@ -211,7 +213,20 @@ int16_t get_line_position(uint16_t* values) {
   } else if (mapped_values[9] > 30) {
     last_side = 1;
   }
-  
+
+  // Stay in T for some time
+  if (line_state == line_pos_state_t::T && millis() < t_start + 1000) {
+    return 5000;
+  } else if (line_state == line_pos_state_t::T) {
+    t_start = 0;
+    last_full = 0;
+  }
+
+  // Stop losting if line
+  if (sum > 20 && line_state == line_pos_state_t::LOSTING) {
+    line_state = line_pos_state_t::DETECTED;
+  }
+
   // No line
   if (sum < 10 && line_state != line_pos_state_t::LOST) {
     if (line_state != line_pos_state_t::LOSTING) {
@@ -220,14 +235,24 @@ int16_t get_line_position(uint16_t* values) {
     }
   } else if (sum < 10 && line_state == line_pos_state_t::LOST) {
     return 0;
+  } else if (sum > 80*7) {
+    line_state = line_pos_state_t::FULL;
+    last_full = millis();
+    return moy_pon;
   }
-  
+
   // Keep last edge value while line is losting
-  if (line_state == line_pos_state_t::LOSTING && (millis() < losing_start + 1000)) {
+  if (line_state == line_pos_state_t::LOSTING && (millis() < losing_start + 1000) && millis() > last_full + 3000) {
     return 5000 * last_side;
   } else if (line_state == line_pos_state_t::LOSTING) {
-    line_state = line_pos_state_t::LOST;
-    return 0; 
+    if (millis() < last_full + 3000 && millis() > losing_start + 1000) {
+      line_state = line_pos_state_t::T;
+      t_start = millis();
+      return 5000;
+    } else {
+      // line_state = line_pos_state_t::LOST;
+      return 0;
+    }
   }
 
 
