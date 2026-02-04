@@ -24,7 +24,8 @@
 #define LS9 PB1
 
 
-#define LINE_TRESH 760
+#define LINE_TRESH 800
+#define LINE_MAX 950
 
 line_led_state_t led_state = line_led_state_t::FOLLOWING;
 
@@ -157,8 +158,8 @@ void update_line_sensors(int* sensors) {
     //#endif
     uint16_t a = analogRead(sensors[i]);
     raw_values[i] = raw_values[i] + a;
-    a = constrain(a, LINE_TRESH, 1030);
-    mapped_values[i] = mapped_values[i] + map(a, LINE_TRESH, 1030, 0, 100);
+    a = constrain(a, LINE_TRESH, LINE_MAX);
+    mapped_values[i] = mapped_values[i] + map(a, LINE_TRESH, LINE_MAX, 0, 100);
     // if (i == 3 /*|| i == 4*/ || i == 5) {
     //   values[i] = analogRead(sensors[i]);
     // } else {
@@ -175,17 +176,181 @@ void print_line_values(uint16_t* values) {
      Serial.println("");
 }
 
-int16_t pos_before_lost = 0;
-unsigned long lost_time = 0;
-unsigned long no_line_time = 0;
-int last_side = 1;
-bool is_full = false;
-unsigned long last_full = 0;
-unsigned long t_start = 0;
-unsigned long nine_start = 0;
+// int16_t pos_before_lost = 0;
+// unsigned long lost_time = 0;
+// unsigned long no_line_time = 0;
+// int last_side = 1;
+// bool is_full = false;
+// unsigned long last_full = 0;
+// unsigned long t_start = 0;
+// unsigned long nine_start = 0;
+// unsigned long last_detected = 0;
+int last_side = 0;
+unsigned long losing_start = 0;
 
 int16_t get_line_position(uint16_t* values) {
+  const int8_t weights[] = {-44, -34, -24, -14, -4, 4, 14, 24, 34, 44};
+  int total = 0, moy_pon = 0, sum = 0;
 
+  // Calculate weighted average
+  for (int i = 0; i < 10; i++) {
+    total += weights[i] * (mapped_values[i] / 10);
+    sum += (mapped_values[i] / 10);
+  }
+
+  // Avoid division by zero
+  if (sum > 0) {
+    moy_pon = (total * 100) / sum;
+  } else {
+    moy_pon = 0;
+  }
+
+  // Set last side based on edge sensors
+  if (mapped_values[0] > 30) {
+    last_side = -1;
+  } else if (mapped_values[9] > 30) {
+    last_side = 1;
+  }
+  
+  // No line
+  if (sum < 10 && line_state != line_pos_state_t::LOST) {
+    if (line_state != line_pos_state_t::LOSTING) {
+      line_state = line_pos_state_t::LOSTING;
+      losing_start = millis();
+    }
+  } else if (sum < 10 && line_state == line_pos_state_t::LOST) {
+    return 0;
+  }
+  
+  // Keep last edge value while line is losting
+  if (line_state == line_pos_state_t::LOSTING && (millis() < losing_start + 1000)) {
+    return 5000 * last_side;
+  } else if (line_state == line_pos_state_t::LOSTING) {
+    line_state = line_pos_state_t::LOST;
+    return 0; 
+  }
+
+
+  line_state = line_pos_state_t::DETECTED;
+  return moy_pon;
+  
+  // Line lost, keep last edge value
+  
+
+  // const int8_t weights[] = {-44, -34, -24, -14, -4, 4, 14, 24, 34, 44};
+  // int total = 0, moy_pon = 0, sum = 0;
+
+  // // Calculate weighted average
+  // for (int i = 0; i < 10; i++) {
+  //   total += weights[i] * (mapped_values[i] / 10);
+  //   sum += (mapped_values[i] / 10);
+  // }
+
+  // // Avoid division by zero
+  // if (sum > 0) {
+  //   moy_pon = (total * 100) / sum;
+  // } else {
+  //   moy_pon = 0;
+  // }
+
+  // // Set last side based on edge sensors
+  // if (mapped_values[0] > 30) {
+  //   last_side = -1;
+  // } else if (mapped_values[9] > 30) {
+  //   last_side = 1;
+  // }
+
+  // // T junction detection
+  // if (sum > 450) {
+  //   if (abs(moy_pon) < 2500) {
+  //     line_state = line_pos_state_t::FULL;
+  //     is_full = true;
+  //     last_full = millis();
+  //   }
+  // } 
+  // // Left/right 90 degree turn detection
+  // else if (mapped_values[0] + mapped_values[1] + mapped_values[2] + mapped_values[3] + mapped_values[4] > 5 * 50) {
+  //   line_state = line_pos_state_t::TURN;
+  //   nine_start = millis();
+  // } else if (mapped_values[5] + mapped_values[6] + mapped_values[7] + mapped_values[8] + mapped_values[9] > 5 * 50) {
+  //   line_state = line_pos_state_t::TURN;
+  //   nine_start = millis();
+  // }
+
+  // // Handle T-junction state
+  // if (line_state == line_pos_state_t::T && t_start && millis() < t_start + 800) {
+  //   return 4400;
+  // } else if (line_state == line_pos_state_t::T) {
+  //   t_start = 0;
+  // }
+
+  // // Handle turn state
+  // if (line_state == line_pos_state_t::TURN && nine_start && millis() < nine_start + 300) {
+  //   return last_side * 4400;
+  // } else if (line_state == line_pos_state_t::TURN) {
+  //   nine_start = 0;
+  // }
+
+  // // Handle line lost or no line
+  // if (sum < 5) {
+  //   if (line_state == line_pos_state_t::LOST && millis() > 5000 + no_line_time) {
+  //     no_line_time = 0;
+  //     line_state = line_pos_state_t::NO_LINE;
+  //     return 0;
+  //   }
+      
+  //   if (is_full && (millis() > last_detected + 2000)) {
+  //     line_state = line_pos_state_t::T;
+  //     is_full = false;
+  //     t_start = millis();
+  //     return 4400;
+  //   }
+      
+  //   if (lost_time == 0) {
+  //     lost_time = millis();
+  //     line_state = line_pos_state_t::LOSTING;
+  //   }
+      
+  //   if (line_state == line_pos_state_t::LOSTING) {
+  //     if ((lost_time + 2000) < millis()) {
+  //       line_state = line_pos_state_t::LOST;
+  //       pos_before_lost = 0;
+  //       lost_time = 0;
+  //       no_line_time = millis();
+  //       return 0;
+  //     }
+          
+  //     // Use last_side to determine turn direction when losing line
+  //     if (last_side == 1) {
+  //       return 4400;
+  //     } else if (last_side == -1) {
+  //         return -4400;
+  //     }
+  //   }
+      
+  //   line_state = line_pos_state_t::NO_LINE;
+  //   return 0;
+  // } 
+  // // Handle strong line detection (turn adjustment)
+  // else if (sum > 300) {
+  //   // Optional: add turn adjustment here if needed
+  //   // if (moy_pon > 0) moy_pon += 2000;
+  //   // else moy_pon -= 2000;
+  //   line_state = line_pos_state_t::DETECTED;
+  //   lost_time = 0;
+  //   last_full = 0;
+  //   last_detected = millis();
+  // } 
+  // // Normal line following
+  // else {
+  //   line_state = line_pos_state_t::DETECTED;
+  //   lost_time = 0;
+  //   last_full = 0;
+  //   last_detected = millis();
+  // }
+
+  // pos_before_lost = moy_pon;
+  // return moy_pon;
   // const int8_t weights[] = {-44, -34, -24, -14, -4, 4, 14, 24, 34, 44};
   // int total = 0, moy_pon, sum=0;
   // for (int i = 0; i < 10; i++) {
@@ -360,6 +525,6 @@ void loop() {
       mapped_values[i] = 0;
     }
   }
-  delay(2);
+  delay(5);
   oversampling++;
 }
