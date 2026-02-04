@@ -356,6 +356,10 @@ void doFollow(char *cmd) {
     music.speed = 1;
     music.notes_count = sizeof(follow_start)/sizeof(music_score_t);
     xQueueSend(buzzer_queue, (void *)&music, 0);
+
+    t_line_led_state data;
+    data.state = line_led_state_t::FOLLOWING;
+    can.send_struct(data);
   }
 }
 
@@ -412,7 +416,7 @@ void handleEMSLongTap(Button2& b) {
       xQueueSend(buzzer_queue, (void *)&music, 0);
       Serial.println("Armed");
       t_line_led_state data;
-      data.state = line_led_state_t::FOLLOWING;
+      data.state = line_led_state_t::ARMED;
       can.send_struct(data);
       return;
     }

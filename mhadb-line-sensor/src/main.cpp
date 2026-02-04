@@ -106,7 +106,8 @@ void set_led_line() {
     }
   }
 }
-
+uint8_t gHue = 0;
+unsigned long armed_time = 0;
 void update_leds() {
   switch (led_state) {
   case line_led_state_t::FOLLOWING:
@@ -123,6 +124,12 @@ void update_leds() {
           set_led_line();
         }
       }
+    break;
+    case line_led_state_t::ARMED:
+    if (elapsed(&armed_time, 30)){
+      fill_rainbow(leds_A, 5, gHue, 7);
+      fill_rainbow(leds_B, 5, gHue, 7);
+    }
     break;
   }
 
