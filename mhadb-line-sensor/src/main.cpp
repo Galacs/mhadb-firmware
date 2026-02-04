@@ -127,7 +127,7 @@ void update_leds() {
     break;
     case line_led_state_t::EMS:
     if (elapsed(&ems_time, 250))
-      ems_blink += 1;
+      ems_blink = !ems_blink;
       for (size_t i = 0; i < 5; i++) {
         if (ems_blink) {
           leds_A[i] = CRGB::Red2;
@@ -139,8 +139,9 @@ void update_leds() {
     break;
     case line_led_state_t::ARMED:
     if (elapsed(&armed_time, 30)){
-      fill_rainbow(leds_A, 5, gHue, 7);
-      fill_rainbow(leds_B, 5, gHue, 7);
+      fill_rainbow(leds_A, 5, gHue, 30);
+      fill_rainbow(leds_B, 5, gHue, 30);
+      gHue += 10;
     }
     break;
   }
