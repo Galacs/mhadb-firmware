@@ -51,7 +51,15 @@ CRGB leds_B[5];
 uint16_t line_sensors_mapped[10];
 uint16_t line_sensors_raw[10];
 
+bool elapsed(unsigned long* last_run, unsigned long time) {
+  if (millis() > *last_run + time) {
+    *last_run = millis();
+    return true;
+  }
+  return false;
+}
 line_led_state_t led_state = line_led_state_t::FOLLOWING;
+
 
 void init_leds() {
   FastLED.addLeds<WS2812B, PB12, GRB>(leds_A, 5);

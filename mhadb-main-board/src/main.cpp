@@ -61,6 +61,14 @@ enum bldc_main_t: uint8_t {
 
 bldc_main_t state = RESET;
 
+bool elapsed(unsigned long* last_run, unsigned long time) {
+  if (millis() > *last_run + time) {
+    *last_run = millis();
+    return true;
+  }
+  return false;
+}
+
 struct music_score_t {
   uint16_t freq;
   uint16_t length;
