@@ -581,7 +581,7 @@ void setup() {
 
   // Buzzer
   ledcAttach(BUZZER_PIN, 4000, 13);
-  buzzer_queue = xQueueCreate(4, sizeof(music_t));
+  buzzer_queue = xQueueCreate(1, sizeof(music_t));
   xTaskCreate(taskBuzzer, "Buzzer", 2048, NULL, 2, NULL);
 
   Setpoint = 0;
