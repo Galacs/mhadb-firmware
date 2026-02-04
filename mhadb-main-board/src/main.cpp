@@ -321,6 +321,7 @@ void doFollow(char *cmd) {
   } else {
     Serial.println("now following....");
     doSendAlign(nullptr);
+    myPID.Reset();
     state = FOLLOWING;
   }
 }
