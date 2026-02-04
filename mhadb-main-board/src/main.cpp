@@ -544,6 +544,10 @@ void doMusic(char *cmd) {
   xQueueSend(buzzer_queue, (void *)&music, 0);
 }
 
+void handleEMSDouble(Button2& b) {
+  doMusic(NULL);
+}
+
 void setup() {
   Serial.begin(115200);
   can.init((gpio_num_t)48, (gpio_num_t)34);
@@ -569,6 +573,7 @@ void setup() {
   starter_btn.begin(STARTER_PIN);
 
   ems_btn.setTapHandler(handleEMSTap);
+  ems_btn.setDoubleClickHandler(handleEMSDouble);
   ems_btn.setLongClickHandler(handleEMSLongTap);
   ems_btn.setLongClickTime(1500);
 
