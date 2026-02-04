@@ -189,6 +189,9 @@ int last_side = 0;
 unsigned long losing_start = 0;
 unsigned long last_full = 0;
 unsigned long t_start = 0;
+unsigned long last_right = 0;
+unsigned long last_left = 0;
+unsigned long right_start = 0;
 
 int16_t get_line_position(uint16_t* values) {
   const int8_t weights[] = {-44, -34, -24, -14, -4, 4, 14, 24, 34, 44};
@@ -210,8 +213,10 @@ int16_t get_line_position(uint16_t* values) {
   // Set last side based on edge sensors
   if (mapped_values[0] > 30) {
     last_side = -1;
+    last_right = millis();
   } else if (mapped_values[9] > 30) {
     last_side = 1;
+    last_left = millis();
   }
 
   // Stay in T for some time
@@ -220,6 +225,11 @@ int16_t get_line_position(uint16_t* values) {
   } else if (line_state == line_pos_state_t::T) {
     t_start = 0;
     last_full = 0;
+  }
+  if (line_state == line_pos_state_t::RIGHT && millis() < right_start + 1000) {
+    return -5000;
+  } else if (line_state == line_pos_state_t::RIGHT) {
+    right_start = 0;
   }
 
   // Stop losting if line
@@ -261,6 +271,11 @@ int16_t get_line_position(uint16_t* values) {
       mapped_values[4]/10 + mapped_values[5]/10 < 10) {
     line_state = line_pos_state_t::T;
     t_start = millis();
+    if (millis() < last_right + 500) {
+      right_start = millis();
+      line_state = line_pos_state_t::RIGHT;
+      return -5000;
+    }
     return 5000;
   }
 
