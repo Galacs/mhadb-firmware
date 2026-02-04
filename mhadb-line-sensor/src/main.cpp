@@ -280,6 +280,7 @@ int16_t get_line_position(uint16_t* values) {
         return -5000;
       } else {
         line_state = line_pos_state_t::DETECTED;
+        last_right_turn = millis();
         return 0;
       }
     }
