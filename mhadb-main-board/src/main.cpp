@@ -18,12 +18,14 @@
 #define RGB2_PIN 11
 #define CAN_ST_PIN 21
 
-float Setpoint, Input, Output, speed = 0, speed_Output;
+float Setpoint, Input, Output, speed = 0, speed_Output, speed_Input = 0;
 
 float Kp = 15, Ki = 10, Kd = 0;
 
+float current_speed = 0;
+
 QuickPID myPID(&Input, &Output, &Setpoint);
-QuickPID speedPID(&Output, &speed_Output, &speed);
+QuickPID speedPID(&current_speed, &speed_Output, &speed);
 
 uint16_t line_sensors_mapped[10] = {0};
 uint16_t line_sensors_raw[10] = {0};
@@ -442,11 +444,12 @@ void following() {
   //if (abs(line) > 1400 && abs(line) < 2400) commetuveux(speed/5, -Output);
   //else if (abs(line) >= 2400) commetuveux(speed/10, -Output);
   //else commetuveux(speed, -Output);
+  current_speed += speed_Output;
   if (line_state == line_pos_state_t::LOSTING) {
     commetuveux(speed_Output/2, -Output);
     //Serial.print("ligne perdu\n");
     //Serial.printf("line: %f, sortie: %f\n", Input*20, Output);
-  } else commetuveux(speed_Output*(1-abs(line)/4200), -Output);
+  } else commetuveux(current_speed*(1-abs(line)/4200), -Output);
   Serial.print("PID Speed: ");
   Serial.println(speed_Output);
   // else commetuveux(speed, -Output);
@@ -539,12 +542,13 @@ void setup() {
   load_settings();
 
   myPID.SetTunings(Kp, Ki, Kd);
-  speedPID.SetTunings(1.2, 1.2, 0.08);
+  // speedPID.SetTunings(1.2, 1.2, 0.08);
+  speedPID.SetTunings(0.1, 0, 0);
   enum class Control : uint8_t {manual, automatic, timer, toggle};  // controller mode
   myPID.SetMode((uint8_t) Control::automatic);
   speedPID.SetMode((uint8_t) Control::automatic);
   myPID.SetOutputLimits(-1, 1);
-  speedPID.SetOutputLimits(0, 100);
+  speedPID.SetOutputLimits(0, 1);
 
   myPID.SetSampleTimeUs(1000);
   speedPID.SetSampleTimeUs(1000);
@@ -557,6 +561,11 @@ bool done = false;
 
 int last_run = 0;
 
+unsigned long speed_start = 0;
+unsigned long speed_start_two = 0;
+
+float speed_temp;
+
 void loop() {
   if (state == bldc_main_t::ARMED && elapsed(&last_armed_beep, 1500)) {
     music_t music;
@@ -565,7 +574,6 @@ void loop() {
     music.notes_count = sizeof(armed_waiting)/sizeof(music_score_t);
     xQueueSend(buzzer_queue, (void *)&music, 0);
   }
-
 
   if (millis() > last_run + 50) {
     last_run = millis();
@@ -576,6 +584,18 @@ void loop() {
   Input /= 100000;
   myPID.Compute();
   speedPID.Compute();
+  
+  // Retardage sortie PID speed
+  if (millis() > speed_start + 10) {
+    speed_temp = speed_Output;
+  }
+  if (millis() > speed_start + 20) {
+    speed_start = millis();
+    // if (speed_Input)
+      // speed_Input = speed_temp;
+    // Serial.print("input: ");
+    // Serial.println(speed_temp);
+  }
 
   // t_line_sensor_raw_data a {.id=10, .value=126};
   // can.send_struct(a);
