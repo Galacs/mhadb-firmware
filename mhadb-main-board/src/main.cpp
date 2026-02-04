@@ -17,11 +17,12 @@
 #define RGB2_PIN 11
 #define CAN_ST_PIN 21
 
-float Setpoint, Input, Output;
+float Setpoint, Input, Output, speed_Output;
 
 float Kp = 15, Ki = 10, Kd = 0;
 
 QuickPID myPID(&Input, &Output, &Setpoint);
+QuickPID speedPID(&Output, &speed_Output, &speed);
 
 uint16_t line_sensors_mapped[10] = {0};
 uint16_t line_sensors_raw[10] = {0};
@@ -328,6 +329,7 @@ void doFollow(char *cmd) {
     Serial.println("now following....");
     doSendAlign(nullptr);
     myPID.Reset();
+    speedPID.Reset();
     state = FOLLOWING;
   }
 }
@@ -391,6 +393,7 @@ void following() {
     }
     if (line_state == line_pos_state_t::NO_LINE) {
       myPID.Reset();
+      speedPID.Reset();
       speed = 0;
       direction = 0;
       commetuveux(speed, direction);
@@ -401,10 +404,12 @@ void following() {
   //else if (abs(line) >= 2400) commetuveux(speed/10, -Output);
   //else commetuveux(speed, -Output);
   if (line_state == line_pos_state_t::LOSTING) {
-    commetuveux(speed/2, -Output);
+    commetuveux(speed_Output/2, -Output);
     //Serial.print("ligne perdu\n");
     //Serial.printf("line: %f, sortie: %f\n", Input*20, Output);
-  } else commetuveux(speed*(1-abs(line)/4200), -Output);
+  } else commetuveux(speed_Output*(1-abs(line)/4200), -Output);
+  Serial.print("PID Speed: ");
+  Serial.println(speed_Output);
   // else commetuveux(speed, -Output);
   //Serial.print("Speed ");
   //Serial.println(speed);
@@ -486,10 +491,15 @@ void setup() {
   load_settings();
 
   myPID.SetTunings(Kp, Ki, Kd);
+  speedPID.SetTunings(1.2, 1.2, 0.08);
   enum class Control : uint8_t {manual, automatic, timer, toggle};  // controller mode
   myPID.SetMode((uint8_t) Control::automatic);
+  speedPID.SetMode((uint8_t) Control::automatic);
   myPID.SetOutputLimits(-1, 1);
+  speedPID.SetOutputLimits(0, 100);
+
   myPID.SetSampleTimeUs(1000);
+  speedPID.SetSampleTimeUs(1000);
 
   // Play boot sound
   //doMusic(NULL);
@@ -517,6 +527,7 @@ void loop() {
   Input = line;
   Input /= 100000;
   myPID.Compute();
+  speedPID.Compute();
 
   // t_line_sensor_raw_data a {.id=10, .value=126};
   // can.send_struct(a);
