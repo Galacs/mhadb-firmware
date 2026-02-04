@@ -101,6 +101,11 @@ static music_score_t hymn[] = {
   { 0, 9 }, { 698, 474 }
 };
 
+static music_score_t armed_waiting[] = {
+  { 1500, 100 }, { 1000, 100 }
+};
+
+
 struct music_t {
   music_score_t* notes;
   size_t notes_count;
@@ -143,6 +148,7 @@ void print_line_values(uint16_t* values) {
      Serial.println("");
 }
 
+unsigned long last_armed_beep = 0;
 Commander command = Commander(Serial);
 
 // Temp settings
@@ -494,6 +500,15 @@ bool done = false;
 int last_run = 0;
 
 void loop() {
+  if (state == bldc_main_t::ARMED && elapsed(&last_armed_beep, 1500)) {
+    music_t music;
+    music.notes = armed_waiting;
+    music.speed = 1;
+    music.notes_count = sizeof(armed_waiting)/sizeof(music_score_t);
+    xQueueSend(buzzer_queue, (void *)&music, 0);
+  }
+
+
   if (millis() > last_run + 50) {
     last_run = millis();
     following();
