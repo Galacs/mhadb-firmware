@@ -284,6 +284,8 @@ class MainCanHandler
     line = data.line_pos;
     line_state = data.state;
     if (line_state == line_pos_state_t::T) Serial.println("T junction");
+    if (line_state == line_pos_state_t::FULL) Serial.println("LINE FULL");
+    if (line_state == line_pos_state_t::LOST) Serial.println("Lost");
   }
   
 
@@ -315,10 +317,10 @@ void commetuveux(float speed, float direction){
   float puissance_rotation = direction * coef;
   t_bldc_set_speed data;
   data.motor_id = motor_id_t::LEFT;
-  data.speed = speed + puissance_rotation;
+  data.speed = speed + puissance_rotation - abs(direction);
   can.send_struct(data);
   data.motor_id = motor_id_t::RIGHT;
-  data.speed = speed - puissance_rotation;
+  data.speed = speed - puissance_rotation - abs(direction);
   can.send_struct(data);
 }
 
@@ -490,7 +492,7 @@ void following() {
   current_speed += speed_Output;
   if (line_state == line_pos_state_t::LOSTING) {
     // commetuveux(speed_Output/2, -Output);
-    speed_setpoint = speed/2;
+    speed_setpoint = speed/6;
     // Serial.print("PID Speed slwoowow: ");
     // Serial.print(current_speed);
     // Serial.print("    ");
@@ -501,7 +503,7 @@ void following() {
     //Serial.printf("line: %f, sortie: %f\n", Input*20, Output);
     commetuveux(current_speed, -Output);
   } else {
-    speed_setpoint = speed*(1-abs(line)/4200);
+    speed_setpoint = speed*(1-abs(line)/4200*3);
     commetuveux(current_speed, -Output);
     // Serial.print("PID Speed: ");
     // Serial.print(current_speed);

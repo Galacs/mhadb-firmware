@@ -24,12 +24,16 @@
 #define LS9 PB1
 
 
-#define LINE_TRESH 850
+#define LINE_TRESH 760
 
+line_led_state_t led_state = line_led_state_t::FOLLOWING;
 
 class LineCanHandler {
 public:
-
+  static void handle_struct(t_line_led_state data) {
+    led_state = data.state;
+  }
+  
   template<typename T>
   static void handle_struct(T data) {};
   template<typename T>
@@ -58,7 +62,6 @@ bool elapsed(unsigned long* last_run, unsigned long time) {
   }
   return false;
 }
-line_led_state_t led_state = line_led_state_t::FOLLOWING;
 
 
 void init_leds() {
@@ -309,7 +312,26 @@ int16_t get_line_position(uint16_t* values) {
     last_side = 1;
   }
 
-  if (line_state == line_pos_state_t::T && millis() < t_start + 300) {
+  int a = 0;
+  for (int i = 0; i < 10; i++) {
+    a += mapped_values[i]/10;
+  }
+  // T junction detection
+  if (a > 450) {
+    if (abs(moy_pon) < 2500 ) {
+      line_state = line_pos_state_t::FULL;
+      is_full = true;
+      last_full = millis();
+    }
+    // Left/right 90
+  } else if (values[0] + values[1] + values[2] + values[3] + values[4] > 5*50) {
+    // line_state = line_pos_state_t::TURN;
+    // nine_start = millis();
+  } else if (values[5] + values[6] + values[7] + values[8] + values[9] > 5*50) {
+    // line_state = line_pos_state_t::TURN;
+    // nine_start = millis();
+  }
+  if (line_state == line_pos_state_t::T && millis() < t_start + 800) {
     return 4400;
   } else {
     t_start = 0;
@@ -320,17 +342,13 @@ int16_t get_line_position(uint16_t* values) {
     nine_start = 0;
   }
 
-  int a = 0;
-  for (int i = 0; i < 10; i++) {
-    a += mapped_values[i]/10;
-  }
-  if (a < 20) {
+  if (a < 5) {
     if (line_state == line_pos_state_t::LOST && millis() > 5000 + no_line_time) {
       no_line_time = 0;
       line_state = line_pos_state_t::NO_LINE;
       return 0;
     }
-    if ((line_state == line_pos_state_t::FULL || is_full) && millis() > last_full + 400) {
+    if (is_full && (millis() > last_full + 3000)) {
       line_state = line_pos_state_t::T;
       is_full = false;
       t_start = millis();
@@ -363,9 +381,9 @@ int16_t get_line_position(uint16_t* values) {
   } else if (a > 300) {
     // Left/Right turn
     if (moy_pon > 0) {
-      moy_pon += 2000;
+      // moy_pon += 2000;
     } else {
-      moy_pon -= 2000;
+      // moy_pon -= 2000;
     }
   } else {
     line_state = line_pos_state_t::DETECTED;
@@ -373,19 +391,6 @@ int16_t get_line_position(uint16_t* values) {
     last_full = 0;
   }
 
-  // T junction detection
-  if (a > 500) {
-    line_state = line_pos_state_t::FULL;
-    is_full = true;
-    last_full = millis();
-    // Left/right 90
-  } else if (values[0] + values[1] + values[2] + values[3] + values[4] > 5*50) {
-    line_state = line_pos_state_t::TURN;
-    nine_start = millis();
-  } else if (values[5] + values[6] + values[7] + values[8] + values[9] > 5*50) {
-    line_state = line_pos_state_t::TURN;
-    nine_start = millis();
-  }
 
   pos_before_lost = moy_pon;
   return moy_pon; 
@@ -463,6 +468,6 @@ void loop() {
       mapped_values[i] = 0;
     }
   }
-  delay(5);
+  delay(2);
   oversampling++;
 }
