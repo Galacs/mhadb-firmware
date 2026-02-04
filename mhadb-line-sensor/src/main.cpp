@@ -192,6 +192,7 @@ unsigned long t_start = 0;
 unsigned long last_right = 0;
 unsigned long last_left = 0;
 unsigned long right_start = 0;
+unsigned long last_right_turn = 0;
 
 int16_t get_line_position(uint16_t* values) {
   const int8_t weights[] = {-44, -34, -24, -14, -4, 4, 14, 24, 34, 44};
@@ -227,6 +228,7 @@ int16_t get_line_position(uint16_t* values) {
     last_full = 0;
   }
   if (line_state == line_pos_state_t::RIGHT && millis() < right_start + 1000) {
+    last_right_turn = millis();
     return -5000;
   } else if (line_state == line_pos_state_t::RIGHT) {
     right_start = 0;
@@ -272,9 +274,14 @@ int16_t get_line_position(uint16_t* values) {
     line_state = line_pos_state_t::T;
     t_start = millis();
     if (millis() < last_right + 500) {
-      right_start = millis();
-      line_state = line_pos_state_t::RIGHT;
-      return -5000;
+      if (millis() > last_right_turn + 5000) {
+        right_start = millis();
+        line_state = line_pos_state_t::RIGHT;
+        return -5000;
+      } else {
+        line_state = line_pos_state_t::DETECTED;
+        return 0;
+      }
     }
     return 5000;
   }
