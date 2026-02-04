@@ -110,6 +110,9 @@ static music_score_t armed_waiting[] = {
   { 1500, 100 }, { 1000, 100 }
 };
 
+static music_score_t armed_error[] = {
+  { 300, 100 }, { 200, 100 }
+};
 
 struct music_t {
   music_score_t* notes;
@@ -372,7 +375,22 @@ void handleEMSTap(Button2& b) {
 void handleEMSLongTap(Button2& b) {
   if (elapsed(&ems_time, 1000)) {
     doSendAlign(NULL);
+    if (!starter_btn.isPressed()) {
+      music_t music;
+      music.notes = armed_error;
+      music.speed = 1;
+      music.notes_count = sizeof(armed_error)/sizeof(music_score_t);
+      xQueueSend(buzzer_queue, (void *)&music, 0);
+      return;
+    }
     state = bldc_main_t::ARMED;
+  }
+}
+
+void handleStarter(Button2& b) {
+  if (state == bldc_main_t::ARMED) {
+    speed = 5;
+    doFollow(NULL);
   }
 }
 
@@ -487,6 +505,8 @@ void setup() {
   ems_btn.setTapHandler(handleEMSTap);
   ems_btn.setLongClickHandler(handleEMSLongTap);
   ems_btn.setLongClickTime(1500);
+
+  starter_btn.setReleasedHandler(handleStarter);
 
   // Buzzer
   ledcAttach(BUZZER_PIN, 4000, 13);
