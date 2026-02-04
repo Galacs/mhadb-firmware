@@ -123,6 +123,8 @@ public:
       HANDLE_MSG(handler_t, t_bldc_alignment_settings);
       HANDLE_MSG(handler_t, t_bldc_set_speed);
       HANDLE_MSG(handler_t, t_bldc_disable);
+      HANDLE_MSG(handler_t, t_bldc_state);
+      HANDLE_MSG(handler_t, t_button_event);
     }
   };
 };
