@@ -3,6 +3,7 @@
 #include <Preferences.h>
 #include "Commander.h"
 #include <QuickPID.h>
+#include <Button2.h>
 
 #include "ESP32_NOW_Serial.h"
 #include "MacAddress.h"
@@ -17,7 +18,7 @@
 #define RGB2_PIN 11
 #define CAN_ST_PIN 21
 
-float Setpoint, Input, Output, speed_Output;
+float Setpoint, Input, Output, speed = 0, speed_Output;
 
 float Kp = 15, Ki = 10, Kd = 0;
 
@@ -33,6 +34,9 @@ bool line_pos_debug = false;
 unsigned long last_debug_line_raw = 0;
 unsigned long last_debug_line = 0;
 unsigned long last_debug_line_pos = 0;
+
+Button2 ems_btn;
+Button2 starter_btn;
 
 // ESP NOW
 // Channel to be used by the ESP-NOW protocol
@@ -140,6 +144,7 @@ void taskBuzzer(void *pvParams) {
     }
   }
 }
+
 
 void print_line_values(uint16_t* values) {
      for (size_t i = 0; i < 10; i++) {
@@ -284,7 +289,6 @@ void doStartAlign(char *cmd) {
   // can.send_rtr(BLDC_ALIGNMENT_SETTINGS);
 }
 
-float speed = 0;
 float direction = 0;
 
 void commetuveux(float speed, float direction){
@@ -354,6 +358,23 @@ void doDebug(char *cmd) {
   };
 }
 
+unsigned long ems_time = 0;
+void handleEMSTap(Button2& b) {
+  if (!state == bldc_main_t::EMG) {
+    ems_time = millis();
+    state = bldc_main_t::EMG;
+    for (size_t i = 0; i < 5; i++) {
+      doDisableBLDC(NULL);
+    }
+  }
+}
+
+void handleEMSLongTap(Button2& b) {
+  if (elapsed(&ems_time, 1000)) {
+    doSendAlign(NULL);
+    state = bldc_main_t::ARMED;
+  }
+}
 
 // Temp test function
 void forward(float speed) {
@@ -459,6 +480,14 @@ void setup() {
   Serial.println(
       "You can now send data to the peer device using the Serial Monitor.\n");
 
+  // Buttons config
+  ems_btn.begin(EMS_PIN);
+  starter_btn.begin(STARTER_PIN);
+
+  ems_btn.setTapHandler(handleEMSTap);
+  ems_btn.setLongClickHandler(handleEMSLongTap);
+  ems_btn.setLongClickTime(1500);
+
   // Buzzer
   ledcAttach(BUZZER_PIN, 4000, 13);
   buzzer_queue = xQueueCreate(1, sizeof(music_t));
@@ -485,7 +514,6 @@ void setup() {
 
   command.add('M', doMusic);
 
-  
 
   init_settings();
   load_settings();
