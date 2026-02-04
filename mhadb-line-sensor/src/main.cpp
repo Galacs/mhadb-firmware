@@ -51,6 +51,13 @@ CRGB leds_B[5];
 uint16_t line_sensors_mapped[10];
 uint16_t line_sensors_raw[10];
 
+enum class line_led_state_t {
+  FOLLOWING,
+  EMS,
+  ARMED,
+};
+line_led_state_t led_state = line_led_state_t::FOLLOWING;
+
 void init_leds() {
   FastLED.addLeds<WS2812B, PB12, GRB>(leds_A, 5);
   FastLED.addLeds<WS2812B, PB13, GRB>(leds_B, 5);
@@ -62,7 +69,10 @@ DEFINE_GRADIENT_PALETTE( heatmap_gp ) {
 255,   15,  250,  255 };
 CRGBPalette16 myPal = heatmap_gp;
 
-void update_leds() {
+bool ems_blink = 0;
+unsigned long ems_time = 0;
+
+void set_led_line() {
   for (size_t i = 0; i < 10; i++) {
     uint8_t brightness = map(mapped_values[i], 0, 100, 0, 250);
     switch (i)
@@ -99,6 +109,26 @@ void update_leds() {
       leds_B[4] = ColorFromPalette(myPal, brightness);
       break;
     }
+  }
+}
+
+void update_leds() {
+  switch (led_state) {
+  case line_led_state_t::FOLLOWING:
+    set_led_line();
+    break;
+    case line_led_state_t::EMS:
+    if (elapsed(&ems_time, 250))
+      ems_blink += 1;
+      for (size_t i = 0; i < 5; i++) {
+        if (ems_blink) {
+          leds_A[i] = CRGB::Red2;
+          leds_B[i] = CRGB::Red2;
+        } else {
+          set_led_line();
+        }
+      }
+    break;
   }
 
   FastLED.show();

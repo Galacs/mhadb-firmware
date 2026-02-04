@@ -51,14 +51,6 @@ const MacAddress peer_mac({0x50, 0x78, 0x7D, 0x18, 0x74, 0x44});
 ESP_NOW_Serial_Class NowSerial(peer_mac, ESPNOW_WIFI_CHANNEL, ESPNOW_WIFI_IF);
 #define Serial NowSerial
 
-bool elapsed(unsigned long* last_run, unsigned long time) {
-  if (millis() > *last_run + time) {
-    *last_run = millis();
-    return true;
-  }
-  return false;
-}
-
 enum bldc_main_t: uint8_t {
   RESET,
   INITIALIZING,
