@@ -116,6 +116,18 @@ static music_score_t armed_error[] = {
   { 300, 100 }, { 200, 100 }
 };
 
+static music_score_t ems_triggered[] = {
+  { 200, 700 }
+};
+
+static music_score_t follow_start[] = {
+  { 900, 100 }, { 1100, 100 }, { 1300, 100 }
+};
+
+static music_score_t follow_end[] = {
+  { 1300, 100 }, { 1100, 100 }, { 900, 100 }
+};
+
 struct music_t {
   music_score_t* notes;
   size_t notes_count;
@@ -334,6 +346,11 @@ void doFollow(char *cmd) {
   if (state == FOLLOWING) {
     Serial.println("now stop....");
     commetuveux(0, 0);
+    music_t music;
+    music.notes = follow_end;
+    music.speed = 1;
+    music.notes_count = sizeof(follow_end)/sizeof(music_score_t);
+    xQueueSend(buzzer_queue, (void *)&music, 0);
     state = RESET;
   } else {
     Serial.println("now following....");
@@ -341,6 +358,12 @@ void doFollow(char *cmd) {
     myPID.Reset();
     speedPID.Reset();
     state = FOLLOWING;
+
+    music_t music;
+    music.notes = follow_start;
+    music.speed = 1;
+    music.notes_count = sizeof(follow_start)/sizeof(music_score_t);
+    xQueueSend(buzzer_queue, (void *)&music, 0);
   }
 }
 
@@ -370,6 +393,11 @@ void handleEMSTap(Button2& b) {
     ems_time = millis();
     state = bldc_main_t::EMG;
     Serial.println("going into emergency");
+    music_t music;
+    music.notes = ems_triggered;
+    music.speed = 1;
+    music.notes_count = sizeof(ems_triggered)/sizeof(music_score_t);
+    xQueueSend(buzzer_queue, (void *)&music, 0);
     commetuveux(0, 0);
     for (size_t i = 0; i < 5; i++) {
       doDisableBLDC(NULL);
@@ -536,7 +564,7 @@ void setup() {
 
   // Buzzer
   ledcAttach(BUZZER_PIN, 4000, 13);
-  buzzer_queue = xQueueCreate(1, sizeof(music_t));
+  buzzer_queue = xQueueCreate(4, sizeof(music_t));
   xTaskCreate(taskBuzzer, "Buzzer", 2048, NULL, 2, NULL);
 
   Setpoint = 0;
