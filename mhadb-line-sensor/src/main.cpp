@@ -134,6 +134,7 @@ void print_line_values(uint16_t* values) {
 
 int16_t pos_before_lost = 0;
 unsigned long lost_time = 0;
+unsigned long no_line_time = 0;
 int last_side = 1;
 bool is_full = false;
 unsigned long last_full = 0;
@@ -284,6 +285,11 @@ int16_t get_line_position(uint16_t* values) {
     a += mapped_values[i]/10;
   }
   if (a < 20) {
+    if (line_state == line_pos_state_t::LOST && millis() > 5000 + no_line_time) {
+      no_line_time = 0;
+      line_state = line_pos_state_t::NO_LINE;
+      return 0;
+    }
     if ((line_state == line_pos_state_t::FULL || is_full) && millis() > last_full + 400) {
       line_state = line_pos_state_t::T;
       is_full = false;
@@ -299,6 +305,7 @@ int16_t get_line_position(uint16_t* values) {
         line_state = line_pos_state_t::LOST;
         pos_before_lost = 0;
         lost_time = 0;
+        no_line_time = millis();
         return 0;
       }
       // if (pos_before_lost > 0) {
