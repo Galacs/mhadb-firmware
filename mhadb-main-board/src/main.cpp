@@ -390,6 +390,9 @@ void handleEMSTap(Button2& b) {
     music.speed = 1;
     music.notes_count = sizeof(ems_triggered)/sizeof(music_score_t);
     xQueueSend(buzzer_queue, (void *)&music, 0);
+    t_line_led_state data;
+    data.state = line_led_state_t::EMS;
+    can.send_struct(data);
     commetuveux(0, 0);
     for (size_t i = 0; i < 5; i++) {
       doDisableBLDC(NULL);
@@ -408,6 +411,9 @@ void handleEMSLongTap(Button2& b) {
       music.notes_count = sizeof(armed_error)/sizeof(music_score_t);
       xQueueSend(buzzer_queue, (void *)&music, 0);
       Serial.println("Armed");
+      t_line_led_state data;
+      data.state = line_led_state_t::FOLLOWING;
+      can.send_struct(data);
       return;
     }
     state = bldc_main_t::ARMED;

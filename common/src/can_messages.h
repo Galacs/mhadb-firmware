@@ -27,6 +27,7 @@ enum CAN_ID {
   LINE_SENSOR_DATA = 160,
   LINE_RAW_SENSOR_DATA = 170,
   BLDC_STATE = 180,
+  LINE_LED_STATE = 190,
 };
 
 enum motor_id_t: uint8_t {
@@ -104,6 +105,16 @@ CAN_STRUCT(t_button_event, CAN_ID::BUTTON_EVENT,
   button_event_kind_t event_type;
 );
 
+
+enum class line_led_state_t {
+  FOLLOWING,
+  EMS,
+  ARMED,
+};
+CAN_STRUCT(t_line_led_state, CAN_ID::LINE_LED_STATE,
+  line_led_state_t state;
+);
+
 template <typename handler_t>
 class MHADBCanController : public CanController<MHADBCanController<handler_t>> {
 public:
@@ -125,6 +136,7 @@ public:
       HANDLE_MSG(handler_t, t_bldc_disable);
       HANDLE_MSG(handler_t, t_bldc_state);
       HANDLE_MSG(handler_t, t_button_event);
+      HANDLE_MSG(handler_t, t_line_led_state);
     }
   };
 };

@@ -51,11 +51,6 @@ CRGB leds_B[5];
 uint16_t line_sensors_mapped[10];
 uint16_t line_sensors_raw[10];
 
-enum class line_led_state_t {
-  FOLLOWING,
-  EMS,
-  ARMED,
-};
 line_led_state_t led_state = line_led_state_t::FOLLOWING;
 
 void init_leds() {
