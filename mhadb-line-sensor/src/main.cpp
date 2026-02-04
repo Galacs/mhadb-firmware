@@ -235,7 +235,7 @@ int16_t get_line_position(uint16_t* values) {
     }
   } else if (sum < 10 && line_state == line_pos_state_t::LOST) {
     return 0;
-  } else if (sum > 80*7) {
+  } else if (sum > 80*9) {
     line_state = line_pos_state_t::FULL;
     last_full = millis();
     return moy_pon;
@@ -255,6 +255,14 @@ int16_t get_line_position(uint16_t* values) {
     }
   }
 
+  // 90s
+  if (sum > 4 * 80) {
+    if (moy_pon > 0) {
+      moy_pon += 2000;
+    } else {
+      moy_pon -= 2000;
+    }
+  }
 
   line_state = line_pos_state_t::DETECTED;
   return moy_pon;
