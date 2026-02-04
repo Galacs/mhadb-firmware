@@ -255,6 +255,15 @@ int16_t get_line_position(uint16_t* values) {
     }
   }
 
+  // Y
+  if ((mapped_values[0]/10 + mapped_values[1]/10 + mapped_values[2]/10 + mapped_values[3]/10 + mapped_values[4]/10 > 80 ||
+      mapped_values[5]/10 + mapped_values[6]/10 + mapped_values[7]/10 + mapped_values[8]/10 + mapped_values[9]/10 > 80) &&
+      mapped_values[4]/10 + mapped_values[5]/10 < 10) {
+    line_state = line_pos_state_t::T;
+    t_start = millis();
+    return 5000;
+  }
+
   // 90s
   if (mapped_values[0]/10 + mapped_values[1]/10 + mapped_values[2]/10 + mapped_values[3]/10 + mapped_values[4]/10 > 4 * 80 ||
       mapped_values[5]/10 + mapped_values[6]/10 + mapped_values[7]/10 + mapped_values[8]/10 + mapped_values[9]/10 > 4 * 80) {
