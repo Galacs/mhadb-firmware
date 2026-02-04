@@ -610,4 +610,6 @@ void loop() {
   // }
   command.run();
   // delay(20);
+  ems_btn.loop();
+  starter_btn.loop();
 }
