@@ -246,6 +246,10 @@ int16_t get_line_position(uint16_t* values) {
       line_state = line_pos_state_t::LOSTING;
       losing_start = millis();
     }
+    if (line_state == line_pos_state_t::LOSTING && millis() > losing_start + 5000) {
+        line_state = line_pos_state_t::LOST;
+        return 0;
+    }
   } else if (sum < 10 && line_state == line_pos_state_t::LOST) {
     return 0;
   } else if (sum > 80*9) {
