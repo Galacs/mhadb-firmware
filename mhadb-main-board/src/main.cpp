@@ -20,7 +20,7 @@
 
 float Setpoint, Input, Output, speed = 0, speed_Output, speed_Input = 0;
 
-float Kp = 15, Ki = 10, Kd = 0;
+float Kp = 15, Ki = 11, Kd = 0;
 
 float current_speed = 0, speed_setpoint;
 
@@ -331,7 +331,8 @@ class MainCanHandler
         break;
       } 
     }
-
+    if (line_state == line_pos_state_t::Y) speed = 5;
+    if (line_state == line_pos_state_t::RIGHT) speed = 14;
     if (line_state == line_pos_state_t::T) Serial.println("T junction");
     if (line_state == line_pos_state_t::FULL) Serial.println("LINE FULL");
     if (line_state == line_pos_state_t::LOST) Serial.println("Lost");
@@ -411,7 +412,7 @@ void doFollow(char *cmd) {
     myPID.Reset();
     speedPID.Reset();
     state = FOLLOWING;
-    speed = 15;
+    speed = 12;
     follow_starting = millis();
 
     music_t music;
@@ -493,7 +494,6 @@ void handleEMSLongTap(Button2& b) {
 
 void handleStarter(Button2& b) {
   if (state == bldc_main_t::ARMED) {
-    speed = 5;
     doFollow(NULL);
   }
 }
@@ -531,9 +531,9 @@ void following() {
   //   commetuveux(speed, direction);
   // }
  if (state == FOLLOWING) {
-    if (millis() > follow_starting + 1000 * 5 && speed != 5) {
-      speed = 5;
-      play_chime(speed_change, sizeof(speed_change));
+    if (millis() > follow_starting + 8000 * 5 && speed != 5) {
+      // speed = 5;
+      // play_chime(speed_change, sizeof(speed_change));
     }
     if (elapsed(&last_pid_print, 200)) {
       //Serial.printf("line: %f, sortie: %f\n", Input*20, Output);
@@ -672,7 +672,7 @@ void setup() {
 
   myPID.SetTunings(Kp, Ki, Kd);
   // speedPID.SetTunings(1.2, 1.2, 0.08);
-  speedPID.SetTunings(0.1, 0, 0);
+  speedPID.SetTunings(0.15, 0, 0);
   enum class Control : uint8_t {manual, automatic, timer, toggle};  // controller mode
   myPID.SetMode((uint8_t) Control::automatic);
   speedPID.SetMode((uint8_t) Control::automatic);

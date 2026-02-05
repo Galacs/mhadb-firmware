@@ -50,6 +50,7 @@ enum class line_pos_state_t : uint8_t {
   FULL,
   TURN,
   RIGHT,
+  Y,
 };
 CAN_STRUCT(t_line_sensor_data, CAN_ID::LINE_SENSOR_DATA,
   int16_t line_pos;

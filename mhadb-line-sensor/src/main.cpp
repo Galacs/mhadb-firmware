@@ -24,8 +24,8 @@
 #define LS9 PB1
 
 
-#define LINE_TRESH 800
-#define LINE_MAX 950
+#define LINE_TRESH 850
+#define LINE_MAX 960
 
 line_led_state_t led_state = line_led_state_t::FOLLOWING;
 
@@ -190,7 +190,9 @@ int last_side = 0;
 unsigned long losing_start = 0;
 unsigned long last_full = 0;
 unsigned long t_start = 0;
+unsigned long y_start = 0;
 unsigned long last_right = 0;
+unsigned long last_middle = 0;
 unsigned long last_left = 0;
 unsigned long right_start = 0;
 unsigned long last_right_turn = 0;
@@ -220,15 +222,24 @@ int16_t get_line_position(uint16_t* values) {
     last_side = 1;
     last_left = millis();
   }
+  if (mapped_values[4]/10 + mapped_values[5]/10 > 80) {
+    last_middle = millis();
+  }
 
   // Stay in T for some time
-  if (line_state == line_pos_state_t::T && millis() < t_start + 500) {
+  if (line_state == line_pos_state_t::T && millis() < t_start + 900) {
     return 5000;
   } else if (line_state == line_pos_state_t::T) {
     t_start = 0;
     last_full = 0;
   }
-  if (line_state == line_pos_state_t::RIGHT && millis() < right_start + 500) {
+  if (line_state == line_pos_state_t::Y && millis() < y_start + 500) {
+    return moy_pon + 2000;
+  } else if (line_state == line_pos_state_t::Y) {
+    y_start = 0;
+    last_full = 0;
+  }
+  if (line_state == line_pos_state_t::RIGHT && millis() < right_start + 150) {
     last_right_turn = millis();
     return -5000;
   } else if (line_state == line_pos_state_t::RIGHT) {
@@ -246,23 +257,25 @@ int16_t get_line_position(uint16_t* values) {
       line_state = line_pos_state_t::LOSTING;
       losing_start = millis();
     }
-    if (line_state == line_pos_state_t::LOSTING && millis() > losing_start + 5000) {
-        line_state = line_pos_state_t::LOST;
-        return 0;
-    }
+    // if (line_state == line_pos_state_t::LOSTING && millis() > losing_start + 5000) {
+    //     line_state = line_pos_state_t::LOST;
+    //     return 0;
+    // }
   } else if (sum < 10 && line_state == line_pos_state_t::LOST) {
     return 0;
-  } else if (sum > 80*9) {
-    line_state = line_pos_state_t::FULL;
-    last_full = millis();
-    return moy_pon;
+  } else if (sum > 150) {
+    if (millis() < last_right + 100 && millis() < last_left + 100 && millis() < last_middle + 100) {
+      line_state = line_pos_state_t::FULL;
+      last_full = millis();
+      return moy_pon;
+    }
   }
 
   // Keep last edge value while line is losting
-  if (line_state == line_pos_state_t::LOSTING && (millis() < losing_start + 1000) && millis() > last_full + 3000) {
+  if (line_state == line_pos_state_t::LOSTING && (millis() < losing_start + 1000) && millis() > last_full + 2000) {
     return 5000 * last_side;
   } else if (line_state == line_pos_state_t::LOSTING) {
-    if (millis() < last_full + 3000 && millis() > losing_start + 1000) {
+    if (millis() < last_full + 2000 && millis() > losing_start + 500) {
       line_state = line_pos_state_t::T;
       t_start = millis();
       return 5000;
@@ -273,11 +286,11 @@ int16_t get_line_position(uint16_t* values) {
   }
 
   // Y
-  if ((mapped_values[0]/10 + mapped_values[1]/10 + mapped_values[2]/10 + mapped_values[3]/10 + mapped_values[4]/10 > 80 &&
-      mapped_values[5]/10 + mapped_values[6]/10 + mapped_values[7]/10 + mapped_values[8]/10 + mapped_values[9]/10 > 80) &&
+  if ((mapped_values[0]/10 + mapped_values[1]/10 + mapped_values[2]/10 + mapped_values[3]/10 + mapped_values[4]/10 > 50 &&
+      mapped_values[5]/10 + mapped_values[6]/10 + mapped_values[7]/10 + mapped_values[8]/10 + mapped_values[9]/10 > 50) &&
       mapped_values[4]/10 + mapped_values[5]/10 < 10) {
-    line_state = line_pos_state_t::T;
-    t_start = millis();
+    line_state = line_pos_state_t::Y;
+    y_start = millis();
     if (millis() < last_right + 500) {
       if (millis() > last_right_turn + 5000) {
         right_start = millis();
@@ -296,9 +309,17 @@ int16_t get_line_position(uint16_t* values) {
   if (mapped_values[0]/10 + mapped_values[1]/10 + mapped_values[2]/10 + mapped_values[3]/10 + mapped_values[4]/10 > 4 * 80 ||
       mapped_values[5]/10 + mapped_values[6]/10 + mapped_values[7]/10 + mapped_values[8]/10 + mapped_values[9]/10 > 4 * 80) {
     if (moy_pon > 0) {
+      if (millis() < y_start + 20000) {
+        return moy_pon;
+      }
       moy_pon += 2000;
     } else {
       moy_pon -= 2000;
+      if (millis() > y_start + 15000) {
+        right_start = millis();
+        line_state = line_pos_state_t::RIGHT;
+        return -6000;
+      }
     }
   }
 
