@@ -496,7 +496,7 @@ void following() {
   current_speed += speed_Output;
   if (line_state == line_pos_state_t::LOSTING) {
     // commetuveux(speed_Output/2, -Output);
-    speed_setpoint = speed/6;
+    speed_setpoint = speed*0.3;
     // Serial.print("PID Speed slwoowow: ");
     // Serial.print(current_speed);
     // Serial.print("    ");
@@ -507,7 +507,7 @@ void following() {
     //Serial.printf("line: %f, sortie: %f\n", Input*20, Output);
     commetuveux(current_speed, -Output);
   } else {
-    speed_setpoint = speed*(1-abs(line)/4200*3);
+    speed_setpoint = speed*(1-abs(line)/5000);
     commetuveux(current_speed, -Output);
     // Serial.print("PID Speed: ");
     // Serial.print(current_speed);
