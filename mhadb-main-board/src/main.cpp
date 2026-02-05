@@ -389,6 +389,8 @@ void doSendAlign(char *cmd) {
   state = bldc_main_t::RESET;
 }
 
+unsigned long follow_starting = 0;
+
 void doFollow(char *cmd) {
   if (state == FOLLOWING) {
     Serial.println("now stop....");
@@ -405,6 +407,8 @@ void doFollow(char *cmd) {
     myPID.Reset();
     speedPID.Reset();
     state = FOLLOWING;
+    speed = 15;
+    follow_starting = millis();
 
     music_t music;
     music.notes = follow_start;
@@ -523,6 +527,9 @@ void following() {
   //   commetuveux(speed, direction);
   // }
  if (state == FOLLOWING) {
+    if (millis() > follow_starting + 1000 * 5) {
+      speed = 5;
+    }
     if (elapsed(&last_pid_print, 200)) {
       //Serial.printf("line: %f, sortie: %f\n", Input*20, Output);
     }
