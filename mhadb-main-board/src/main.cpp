@@ -424,6 +424,10 @@ void handleEMSLongTap(Button2& b) {
       music.speed = 1;
       music.notes_count = sizeof(armed_error)/sizeof(music_score_t);
       xQueueSend(buzzer_queue, (void *)&music, 0);
+      state = bldc_main_t::RESET;
+      t_line_led_state data;
+      data.state = line_led_state_t::FOLLOWING;
+      can.send_struct(data);
       return;
     }
     Serial.println("Armed");
