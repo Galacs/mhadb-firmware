@@ -144,6 +144,10 @@ static music_score_t follow_right[] = {
   { 6500, 100 }, { 2000, 100 }
 };
 
+static music_score_t speed_change[] = {
+  { 8000, 200 }
+};
+
 struct music_t {
   music_score_t* notes;
   size_t notes_count;
@@ -527,8 +531,9 @@ void following() {
   //   commetuveux(speed, direction);
   // }
  if (state == FOLLOWING) {
-    if (millis() > follow_starting + 1000 * 5) {
+    if (millis() > follow_starting + 1000 * 5 && speed != 5) {
       speed = 5;
+      play_chime(speed_change, sizeof(speed_change));
     }
     if (elapsed(&last_pid_print, 200)) {
       //Serial.printf("line: %f, sortie: %f\n", Input*20, Output);
