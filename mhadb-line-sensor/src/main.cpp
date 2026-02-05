@@ -81,7 +81,7 @@ unsigned long ems_time = 0;
 
 void set_led_line() {
   for (size_t i = 0; i < 10; i++) {
-    uint8_t brightness = map(mapped_values[i], 0, 100, 0, 250);
+    uint8_t brightness = map(mapped_values[i]/10, 0, 100, 0, 250);
     switch (i)
     {
     case 0:
