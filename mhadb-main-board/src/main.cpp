@@ -128,6 +128,22 @@ static music_score_t follow_end[] = {
   { 1300, 100 }, { 1100, 100 }, { 900, 100 }
 };
 
+static music_score_t follow_full[] = {
+  { 500, 100 }, { 200, 100 }
+};
+
+static music_score_t follow_losing[] = {
+  { 2000, 100 }, { 2500, 100 }
+};
+
+static music_score_t follow_T[] = {
+  { 2000, 100 }, { 6500, 100 }
+};
+
+static music_score_t follow_right[] = {
+  { 6500, 100 }, { 2000, 100 }
+};
+
 struct music_t {
   music_score_t* notes;
   size_t notes_count;
@@ -198,6 +214,14 @@ void init_settings() {
   }
 }
 
+void play_chime(music_score_t* score, size_t size) {
+  music_t music;
+  music.notes = score;
+  music.speed = 1;
+  music.notes_count = size/sizeof(music_score_t);
+  xQueueSend(buzzer_queue, (void *)&music, 0);
+}
+
 void load_settings() {
   p_motor_left_zero = prefs.getFloat("motorLZero");
   p_motor_right_zero = prefs.getFloat("motorRZero");
@@ -205,6 +229,8 @@ void load_settings() {
   p_motor_left_direction = prefs.getChar("motorLDir");
   p_motor_right_direction = prefs.getChar("motorRDir");
 }
+
+unsigned long last_beep = 0;
 
 class MainCanHandler
 {
@@ -283,6 +309,25 @@ class MainCanHandler
     }
     line = data.line_pos;
     line_state = data.state;
+
+    // Play beep
+    if (elapsed(&last_beep, 250)) {
+      switch (line_state) {
+        case line_pos_state_t::FULL:
+          play_chime(follow_full, sizeof(follow_full));
+        break;
+        case line_pos_state_t::T:
+          play_chime(follow_T, sizeof(follow_T));
+        break;
+        case line_pos_state_t::RIGHT:
+          play_chime(follow_right, sizeof(follow_right));
+        break;
+        case line_pos_state_t::LOSTING:
+          play_chime(follow_losing, sizeof(follow_losing));
+        break;
+      } 
+    }
+
     if (line_state == line_pos_state_t::T) Serial.println("T junction");
     if (line_state == line_pos_state_t::FULL) Serial.println("LINE FULL");
     if (line_state == line_pos_state_t::LOST) Serial.println("Lost");
