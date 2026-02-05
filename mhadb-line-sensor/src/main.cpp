@@ -222,13 +222,13 @@ int16_t get_line_position(uint16_t* values) {
   }
 
   // Stay in T for some time
-  if (line_state == line_pos_state_t::T && millis() < t_start + 1000) {
+  if (line_state == line_pos_state_t::T && millis() < t_start + 500) {
     return 5000;
   } else if (line_state == line_pos_state_t::T) {
     t_start = 0;
     last_full = 0;
   }
-  if (line_state == line_pos_state_t::RIGHT && millis() < right_start + 1000) {
+  if (line_state == line_pos_state_t::RIGHT && millis() < right_start + 500) {
     last_right_turn = millis();
     return -5000;
   } else if (line_state == line_pos_state_t::RIGHT) {
