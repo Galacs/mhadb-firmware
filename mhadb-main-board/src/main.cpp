@@ -449,6 +449,10 @@ void doDebug(char *cmd) {
 
 unsigned long ems_time = 0;
 void handleEMSTap(Button2& b) {
+  if (state == bldc_main_t::ARMED) {
+    doFollow(NULL);
+    return;
+  }
   if (state != bldc_main_t::EMG) {
     ems_time = millis();
     state = bldc_main_t::EMG;
@@ -472,18 +476,18 @@ void handleEMSLongTap(Button2& b) {
   Serial.println("Long");
   if (elapsed(&ems_time, 1000)) {
     doSendAlign(NULL);
-    if (!starter_btn.isPressed()) {
-      music_t music;
-      music.notes = armed_error;
-      music.speed = 1;
-      music.notes_count = sizeof(armed_error)/sizeof(music_score_t);
-      xQueueSend(buzzer_queue, (void *)&music, 0);
-      state = bldc_main_t::RESET;
-      t_line_led_state data;
-      data.state = line_led_state_t::FOLLOWING;
-      can.send_struct(data);
-      return;
-    }
+    // if (!starter_btn.isPressed()) {
+    //   music_t music;
+    //   music.notes = armed_error;
+    //   music.speed = 1;
+    //   music.notes_count = sizeof(armed_error)/sizeof(music_score_t);
+    //   xQueueSend(buzzer_queue, (void *)&music, 0);
+    //   state = bldc_main_t::RESET;
+    //   t_line_led_state data;
+    //   data.state = line_led_state_t::FOLLOWING;
+    //   can.send_struct(data);
+    //   return;
+    // }
     Serial.println("Armed");
     t_line_led_state data;
     data.state = line_led_state_t::ARMED;
@@ -638,7 +642,8 @@ void setup() {
   ems_btn.setLongClickHandler(handleEMSLongTap);
   ems_btn.setLongClickTime(1500);
 
-  starter_btn.setReleasedHandler(handleStarter);
+  // starter_btn.setReleasedHandler(handleStarter);
+  // ems_btn.setTripleClickHandler(handleStarter);
 
   // Buzzer
   ledcAttach(BUZZER_PIN, 4000, 13);
